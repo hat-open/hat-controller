@@ -1,0 +1,6 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+$id: "hat-controller://units/os.yaml"
+type: object
+properties:
+    thread_pool_size: integer
+    default: 5

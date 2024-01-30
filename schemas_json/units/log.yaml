@@ -1,0 +1,8 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+$id: "hat-controller://units/log.yaml"
+type: object
+required:
+    - logger
+properties:
+    logger:
+        type: string

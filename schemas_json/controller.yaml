@@ -1,0 +1,76 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+$id: "hat-controller://controller.yaml"
+title: Controller
+type: object
+required:
+    - units
+    - environments
+properties:
+    type:
+        const: controller
+        description: configuration type identification
+    version:
+        type: string
+        description: component version
+    log:
+        $ref: "hat-json://logging.yaml"
+    units:
+        type: array
+        items:
+            $ref: "hat-controller://controller.yaml#/$defs/unit"
+    environment:
+        type: array
+        items:
+            $ref: "hat-controller://controller.yaml#/$defs/environment"
+$defs:
+    unit:
+        type: object
+        description: |
+            structure of unit configuration depends on unit type
+        required:
+            - module
+        properties:
+            module:
+                type: string
+                description: |
+                    full python module name that implements unit
+    environment:
+        type: object
+        required:
+            - name
+            - init_code
+            - actions
+        properties:
+            name:
+                type: string
+            init_code:
+                type: string
+            actions:
+                type: array
+                items:
+                    $ref: "hat-controller://controller.yaml#/$defs/action"
+    action:
+        type: object
+        required:
+            - name
+            - triggers
+            - code
+        properties:
+            name:
+                type: string
+            triggers:
+                type: array
+                items:
+                    $ref: "hat-controller://controller.yaml#/$defs/trigger"
+            code:
+                type: string
+    trigger:
+        type: object
+        required:
+            - type
+            - name
+        properties:
+            type:
+                type: string
+            name:
+                type: string

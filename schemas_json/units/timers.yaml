@@ -1,0 +1,36 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+$id: "hat-controller://units/timers.yaml"
+type: object
+required:
+    - timezone
+    - timers
+properties:
+    timezone:
+        type: string
+        description: |
+            timezone identifier
+            (e.g. https://en.wikipedia.org/wiki/List_of_tz_database_time_zones)
+    timers:
+        type: array
+        items:
+            type: object
+            required:
+                - name
+                - time
+                - auto_start
+                - repeat
+            properties:
+                name:
+                    type: string
+                time:
+                    oneOf:
+                      - type: number
+                        description: |
+                            relative timer duration in seconds
+                      - type: string
+                        description: |
+                            absolute timer cron expression
+                auto_start:
+                    type: boolean
+                repeat:
+                    type: boolean
