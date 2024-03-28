@@ -5,9 +5,9 @@ import time
 import zoneinfo
 
 from hat import aio
+from hat import util
 
 from hat.controller import common
-from hat.controller import cron
 
 
 mlog = logging.getLogger(__name__)
@@ -29,7 +29,7 @@ class TimersUnit(common.Unit):
 
             if isinstance(timer_conf['time'], str):
                 self._absolute_timer_exprs[name] = \
-                    cron.parse(timer_conf['time'])
+                    util.cron.parse(timer_conf['time'])
 
             if timer_conf['auto_start']:
                 self._call_start(name)
@@ -68,7 +68,7 @@ class TimersUnit(common.Unit):
                     t_prev_local = t_local
 
                 if t_next_local is None:
-                    t_next_local = cron.next(expr, t_prev_local)
+                    t_next_local = util.cron.next(expr, t_prev_local)
                     t_next_utc = t_next_local.astimezone(datetime.timezone.utc)
 
                 if t_utc < t_next_utc:
