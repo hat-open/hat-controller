@@ -127,7 +127,7 @@ def _ext_init_api(interpreter, infos, call_cb):
 
 
 def _ext_create_action(interpreter, code):
-    return interpreter.eval(f"function () {{ {code} }}")
+    return interpreter.eval(f"new Function({json.encode(code)})")
 
 
 def _match_trigger(trigger, type_query, name_query):
