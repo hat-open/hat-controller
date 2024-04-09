@@ -29,7 +29,7 @@ class Environment(aio.Resource):
         self._trigger_queue = aio.Queue(trigger_queue_size)
         self._proxies = {proxy.info.name: proxy for proxy in proxies}
         self._last_trigger = None
-        self._init_code = environment_conf['init']
+        self._init_code = environment_conf['init_code']
         self._action_confs = {action_conf['name']: action_conf
                               for action_conf in environment_conf['actions']}
 
@@ -96,7 +96,7 @@ def _ext_init_api(interpreter, infos, call_cb):
         if isinstance(x, str):
             return x
 
-        elements = (f"'k': {encode(v)}" for k, v in x.items())
+        elements = (f"'{k}': {encode(v)}" for k, v in x.items())
         return f"{{{', '.join(elements)}}}"
 
     api_dict = {}
@@ -113,16 +113,17 @@ def _ext_init_api(interpreter, infos, call_cb):
 
                 parent = parent[segment]
 
-            parent[segments[-1]] = (
-                f"function () {{ "
-                f"return f('{info.name}', '{function}', arguments); "
-                f"}}")
+            parent[segments[-1]] = (f"function() {{ return f("
+                                    f"'{info.name}', "
+                                    f"'{function}', "
+                                    f"Array.prototype.slice.call(arguments)"
+                                    f"); }}")
 
         api_dict[info.name] = unit_api_dict
 
     units = encode(api_dict)
     init_fn = interpreter.eval(f"var units; "
-                               f"function (f) {{ units = {units}; }}")
+                               f"(function(f) {{ units = {units}; }})")
     init_fn(call_cb)
 
 
