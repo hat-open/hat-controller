@@ -34,6 +34,14 @@ def create_unit_module():
             def call(self, function, args, trigger):
                 pass
 
+            @property
+            def conf(self):
+                return self._conf
+
+            @property
+            def raise_trigger_cb(self):
+                return self._raise_trigger_cb
+
         for i in itertools.count(1):
             unit_name = f'test_unit_{i}'
             if unit_name not in sys.modules:
@@ -70,16 +78,29 @@ def mock_environment(monkeypatch):
             self._async_group = aio.Group()
             self._conf = environment_conf
             self._trigger_queue = aio.Queue()
+            self._unit_proxies = proxies
 
             if env_queue is not None:
                 env_queue.put_nowait(self)
 
         @property
-        def async_group(self) -> aio.Group:
+        def async_group(self):
             return self._async_group
 
-        async def process_trigger(self, trigger: common.Trigger):
+        async def process_trigger(self, trigger):
             self._trigger_queue.put_nowait(trigger)
+
+        @property
+        def conf(self):
+            return self._conf
+
+        @property
+        def trigger_queue(self):
+            return self._trigger_queue
+
+        @property
+        def unit_proxies(self):
+            return self._unit_proxies
 
     @contextlib.contextmanager
     def mock_environment(environment_queue=None):
@@ -133,7 +154,7 @@ async def test_units(create_unit_module):
         assert unit.is_open
         assert hasattr(unit, 'call')
 
-        unit._conf == unit_conf
+        unit.conf == unit_conf
 
         module = importlib.import_module(unit_module)
         unit_info = module.info
@@ -148,6 +169,7 @@ async def test_units(create_unit_module):
 
     assert all(unit.is_open for unit in units)
     assert engine.is_open
+    assert unit_queue.empty()
 
     # closing one unit closes engine and all other units
     units[0].close()
@@ -156,34 +178,58 @@ async def test_units(create_unit_module):
     await engine.wait_closed()
 
 
-async def test_environments(mock_environment):
+async def test_environments(create_unit_module, mock_environment):
     environments_conf = [{
             'name': f'env{i}',
-            'init_code': 'import sys',
+            'init_code': "",
             'actions': []} for i in range(3)]
-    conf = {'units': [],
+
+    unit_queue = aio.Queue()
+    units_conf = []
+    for i in range(3):
+        unit_module = create_unit_module(unit_queue)
+        units_conf.append({'module': unit_module})
+
+    conf = {'units': units_conf,
             'environments': environments_conf}
 
+    units = []
     environments = []
     environment_queue = aio.Queue()
     with mock_environment(environment_queue):
 
         engine = await hat.controller.engine.create_engine(conf)
 
+        for _ in units_conf:
+            unit = await unit_queue.get()
+            units.append(unit)
+
         for env_conf in environments_conf:
             env = await environment_queue.get()
 
             assert env
             assert env.is_open
-            assert env._conf == env_conf
+            assert env.conf == env_conf
+            for unit_proxy, unit, unit_conf in zip(env.unit_proxies,
+                                                   units,
+                                                   units_conf):
+                assert isinstance(
+                    unit_proxy, hat.controller.environment.UnitProxy)
+                assert unit_proxy.unit == unit
+                unit_module = importlib.import_module(unit_conf['module'])
+                assert unit_proxy.info == unit_module.info
+
             environments.append(env)
 
         assert all(env.is_open for env in environments)
+        assert environment_queue.empty()
 
-        # closing one enviroment closes engine and all other environments
+        # closing one enviroment closes engine and all other envs and units
         environments[0].close()
         for env in environments:
             await env.wait_closed()
+        for unit in units:
+            await unit.wait_closed()
         await engine.wait_closed()
 
 
@@ -191,12 +237,12 @@ async def test_trigger(create_unit_module, mock_environment):
     unit_queue = aio.Queue()
     unit_module = create_unit_module(unit_queue)
     unit_conf = {'module': unit_module}
-    environment_conf = {'name': 'env1',
-                        'init_code': 'import sys',
-                        'actions': []}
+    environments_conf = [{'name': f'env{i}',
+                          'init_code': "",
+                          'actions': []} for i in range(3)]
 
     conf = {'units': [unit_conf],
-            'environments': [environment_conf]}
+            'environments': environments_conf}
 
     environment_queue = aio.Queue()
     with mock_environment(environment_queue):
@@ -204,15 +250,16 @@ async def test_trigger(create_unit_module, mock_environment):
 
         unit = await unit_queue.get()
 
-        environment = await environment_queue.get()
-
-        trigger = common.Trigger(type='test/trigger/type',
-                                 name='test/trigger',
+        trigger = common.Trigger(type='test/type',
+                                 name='test/name',
                                  data={'test': 123})
-        await aio.call(unit._raise_trigger_cb, trigger)
-        trigger_received = await environment._trigger_queue.get()
+        await aio.call(unit.raise_trigger_cb, trigger)
 
-        assert trigger_received == trigger
+        for _ in environments_conf:
+            environment = await environment_queue.get()
+            trigger_received = await environment.trigger_queue.get()
+
+            assert trigger_received == trigger
 
     # unit and environment closed after engine is closed
     await engine.async_close()
