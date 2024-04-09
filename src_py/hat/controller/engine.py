@@ -17,6 +17,7 @@ async def create_engine(conf: json.Data,
     engine._async_group = aio.Group()
     engine._trigger_queue = aio.Queue(trigger_queue_size)
     engine._envs = collections.deque()
+    engine._infos = collections.deque()
 
     proxies = collections.deque()
 
@@ -28,14 +29,16 @@ async def create_engine(conf: json.Data,
 
             unit = await aio.call(info.create, unit_conf,
                                   engine._trigger_queue.put)
-            _bind_resource(engine.async_group, unit)
+            await _bind_resource(engine.async_group, unit)
 
             proxy = hat.controller.environment.UnitProxy(unit, info)
             proxies.append(proxy)
+            engine._infos.append(info)
 
         for env_conf in conf['environments']:
             env = hat.controller.environment.Environment(env_conf, proxies)
-            _bind_resource(engine.async_group, env)
+            await _bind_resource(engine.async_group, env)
+            engine._envs.append(env)
 
         engine.async_group.spawn(engine._trigger_loop)
 
