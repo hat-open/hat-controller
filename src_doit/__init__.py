@@ -20,7 +20,7 @@ __all__ = ['task_clean_all',
 
 build_dir = Path('build')
 docs_dir = Path('docs')
-pytest_dir = Path('src_pytest')
+pytest_dir = Path('test_pytest')
 schemas_json_dir = Path('schemas_json')
 src_py_dir = Path('src_py')
 
