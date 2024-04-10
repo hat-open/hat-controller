@@ -14,7 +14,7 @@ class OsUnit(common.Unit):
 
     @property
     def async_group(self):
-        return self._async_group
+        return self._executor.async_group
 
     async def call(self, function, args, trigger):
         if function == 'readFile':
@@ -32,12 +32,12 @@ class OsUnit(common.Unit):
             path = Path(args[0])
             text = args[1]
 
-            return await self._executor.spawn(_ext_write_file, path, text)
+            return await self._executor.spawn(_ext_append_file, path, text)
 
         if function == 'deleteFile':
             path = Path(args[0])
 
-            return await self._executor.spawn(_ext_write_file, path)
+            return await self._executor.spawn(_ext_delete_file, path)
 
         if function == 'execute':
             self._executor.spawn(_ext_execute, args[0])
