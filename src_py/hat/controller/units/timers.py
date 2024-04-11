@@ -135,7 +135,7 @@ class TimersUnit(common.Unit):
             subgroup.spawn(self._relative_timer_loop, name)
 
     def _call_stop(self, name):
-        subgroup = self._relative_timer_subgroups.pop(name, None)
+        subgroup = self._timer_subgroups.pop(name, None)
         if not subgroup:
             return
 
