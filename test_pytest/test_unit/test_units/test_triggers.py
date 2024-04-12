@@ -10,6 +10,7 @@ from hat.controller.units.triggers import info
 def test_info():
     assert info.name == 'triggers'
     assert info.functions == {'getCurrent', 'raise'}
+    assert isinstance(info.create, aio.AsyncCallable)
     assert info.json_schema_repo is None
     assert info.json_schema_id is None
 

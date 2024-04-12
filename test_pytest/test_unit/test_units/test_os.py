@@ -2,8 +2,22 @@ import pytest
 import subprocess
 
 from hat import aio
+from hat import json
 
 from hat.controller.units.os import info
+
+
+def test_info():
+    assert info.name == 'os'
+    assert info.functions == {
+        'readFile',
+        'writeFile',
+        'appendFile',
+        'deleteFile',
+        'execute'}
+    assert isinstance(info.create, aio.AsyncCallable)
+    assert isinstance(info.json_schema_repo, json.SchemaRepository)
+    assert isinstance(info.json_schema_id, str)
 
 
 def test_conf():

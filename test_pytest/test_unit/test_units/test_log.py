@@ -2,8 +2,22 @@ import logging
 import pytest
 
 from hat import aio
+from hat import json
 
 from hat.controller.units.log import info
+
+
+def test_info():
+    assert info.name == 'log'
+    assert info.functions == {
+        'log',
+        'debug',
+        'info',
+        'warning',
+        'error'}
+    assert isinstance(info.create, aio.AsyncCallable)
+    assert isinstance(info.json_schema_repo, json.SchemaRepository)
+    assert isinstance(info.json_schema_id, str)
 
 
 def test_conf():

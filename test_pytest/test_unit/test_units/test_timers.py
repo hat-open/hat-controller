@@ -5,6 +5,7 @@ import pytest
 import time
 
 from hat import aio
+from hat import json
 
 from hat.controller.units.timers import info
 
@@ -29,6 +30,14 @@ async def assert_trigger_raised(trigger_name, period, trigger_queue, ts=None):
 async def assert_no_trigger(period, trigger_queue):
     await asyncio.sleep(period * 1.1)
     assert trigger_queue.empty()
+
+
+def test_info():
+    assert info.name == 'timers'
+    assert info.functions == {'start', 'stop'}
+    assert isinstance(info.create, aio.AsyncCallable)
+    assert isinstance(info.json_schema_repo, json.SchemaRepository)
+    assert isinstance(info.json_schema_id, str)
 
 
 def test_conf():
