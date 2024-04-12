@@ -52,7 +52,7 @@ class TriggersUnit(common.Unit):
 
     async def _raise_trigger_with_delay(self, trigger, delay):
         await asyncio.sleep(delay / 1000)
-        self._raise_trigger(trigger)
+        await self._raise_trigger(trigger)
 
 
 info = common.UnitInfo(name='triggers',
