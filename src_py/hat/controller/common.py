@@ -23,12 +23,30 @@ TriggerName: typing.TypeAlias = str
 FunctionName: typing.TypeAlias = str
 """Function name (segments are delimited by '.')"""
 
+UnitName: typing.TypeAlias = str
+"""Unit name"""
+
+ActionName: typing.TypeAlias = str
+"""Action name"""
+
 
 class Trigger(typing.NamedTuple):
     """Trigger"""
     type: TriggerType
     name: TriggerName
     data: json.Data
+
+
+class Interpreter(abc.ABC):
+    """Interpreter"""
+
+    @abc.abstractmethod
+    def eval_code(self, code: str):
+        """Evaluate code"""
+
+    @abc.abstractmethod
+    def eval_action(self, action: ActionName):
+        """Evaluate action"""
 
 
 class Unit(aio.Resource):
@@ -73,7 +91,7 @@ class UnitInfo(typing.NamedTuple):
     with JSON schema id.
 
     """
-    name: str
+    name: UnitName
     functions: set[FunctionName]
     create: CreateUnit
     json_schema_id: str | None = None

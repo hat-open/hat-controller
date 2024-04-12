@@ -38,11 +38,15 @@ $defs:
         type: object
         required:
             - name
+            - interpreter
             - init_code
             - actions
         properties:
             name:
                 type: string
+            interpreter:
+                enum:
+                    - DUKTAPE
             init_code:
                 type: string
             actions:

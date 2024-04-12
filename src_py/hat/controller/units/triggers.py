@@ -32,8 +32,6 @@ class TriggersUnit(common.Unit):
             if not isinstance(name, str):
                 raise Exception('invalid name type')
 
-            # TODO check if data is not json.Data
-
             if not isinstance(delay, (int, float)):
                 raise Exception('invalid delay type')
 

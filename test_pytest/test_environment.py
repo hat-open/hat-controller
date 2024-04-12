@@ -8,6 +8,9 @@ from hat.controller import common
 import hat.controller.environment
 
 
+interpreter_types = ['DUKTAPE']
+
+
 class MockUnit(common.Unit):
 
     def __init__(self, call_cb=None):
@@ -23,9 +26,11 @@ class MockUnit(common.Unit):
             self._call_cb(function, args, trigger)
 
 
-async def test_create():
+@pytest.mark.parametrize('interpreter_type', interpreter_types)
+async def test_create(interpreter_type):
     env_conf = {
         'name': 'env1',
+        'interpreter': interpreter_type,
         'init_code': "",
         'actions': []}
 
@@ -47,7 +52,8 @@ async def test_create():
     await env.async_close()
 
 
-async def test_init_code():
+@pytest.mark.parametrize('interpreter_type', interpreter_types)
+async def test_init_code(interpreter_type):
     unit_call_queue = aio.Queue()
 
     def on_unit_call(function, args, trigger):
@@ -67,6 +73,7 @@ async def test_init_code():
 
     env_conf = {
         'name': 'env1',
+        'interpreter': interpreter_type,
         'init_code': f"units.{unit_name}.{unit_fn}('x', 'y', 123);",
         'actions': []}
 
@@ -84,7 +91,8 @@ async def test_init_code():
     await env.async_close()
 
 
-async def test_action():
+@pytest.mark.parametrize('interpreter_type', interpreter_types)
+async def test_action(interpreter_type):
     unit_call_queue = aio.Queue()
 
     def on_unit_call(function, args, trigger):
@@ -109,6 +117,7 @@ async def test_action():
     """
     env_conf = {
         'name': 'env1',
+        'interpreter': interpreter_type,
         'init_code': "",
         'actions': [
             {'name': 'a1',
@@ -143,6 +152,7 @@ async def test_action():
     await env.async_close()
 
 
+@pytest.mark.parametrize('interpreter_type', interpreter_types)
 @pytest.mark.parametrize('trigger_type, trigger_name, triggered_actions', [
     ('test/a', 'x/a', ['a1', 'a3', 'a4', 'a5', 'a7']),
     ('test/a/b', 'x/a', ['a3', 'a5', 'a7']),
@@ -162,8 +172,8 @@ async def test_action():
     ('bla', 'bla/123', ['a3']),
     ('', '', ['a3']),
     ('test2/a', 'x/d', ['a2', 'a3'])])
-async def test_trigger_subscription(trigger_type, trigger_name,
-                                    triggered_actions):
+async def test_trigger_subscription(interpreter_type, trigger_type,
+                                    trigger_name, triggered_actions):
     unit_call_queue = aio.Queue()
 
     def on_unit_call(function, args, trigger):
@@ -183,6 +193,7 @@ async def test_trigger_subscription(trigger_type, trigger_name,
 
     env_conf = {
         'name': 'env1',
+        'interpreter': interpreter_type,
         'init_code': "",
         'actions': [
             {'name': 'a1',

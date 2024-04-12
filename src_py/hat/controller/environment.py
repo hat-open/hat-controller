@@ -5,9 +5,9 @@ import typing
 
 from hat import aio
 from hat import json
-from hat import duktape
 
 from hat.controller import common
+import hat.controller.interpreters
 
 
 mlog = logging.getLogger(__name__)
@@ -29,11 +29,14 @@ class Environment(aio.Resource):
         self._trigger_queue = aio.Queue(trigger_queue_size)
         self._proxies = {proxy.info.name: proxy for proxy in proxies}
         self._last_trigger = None
-        self._init_code = environment_conf['init_code']
         self._action_confs = {action_conf['name']: action_conf
                               for action_conf in environment_conf['actions']}
 
-        self.async_group.spawn(self._run_loop)
+        interpreter_type = hat.controller.interpreters.InterpreterType(
+            environment_conf['interpreter'])
+        init_code = environment_conf['init_code']
+
+        self.async_group.spawn(self._run_loop, interpreter_type, init_code)
 
     @property
     def async_group(self) -> aio.Group:
@@ -42,27 +45,24 @@ class Environment(aio.Resource):
     async def process_trigger(self, trigger: common.Trigger):
         await self._trigger_queue.put(trigger)
 
-    async def _run_loop(self):
+    async def _run_loop(self, interpreter_type, init_code):
         try:
-            interpreter = await self._executor.spawn(duktape.Interpreter)
-
+            action_codes = {action_conf['name']: action_conf['code']
+                            for action_conf in self._action_confs.values()}
             infos = (proxy.info for proxy in self._proxies.values())
-            await self._executor.spawn(_ext_init_api, interpreter, infos,
-                                       self._ext_call)
 
-            actions = {}
-            for action_name, action_conf in self._action_confs.items():
-                actions[action_name] = await self._executor.spawn(
-                    _ext_create_action, interpreter, action_conf['code'])
+            interpreter = await self._executor.spawn(
+                hat.controller.interpreters.create_interpreter,
+                interpreter_type, action_codes, infos, self._ext_call)
 
-            await self._executor.spawn(interpreter.eval, self._init_code)
+            await self._executor.spawn(interpreter.eval_code, init_code)
 
             while True:
                 self._last_trigger = await self._trigger_queue.get()
 
                 for action_name in self._get_matching_action_names():
-                    action = actions[action_name]
-                    await self._executor.spawn(action)
+                    await self._executor.spawn(interpreter.eval_action,
+                                               action_name)
 
         except Exception as e:
             mlog.error('run loop error: %s', e, exc_info=e)
@@ -88,47 +88,6 @@ class Environment(aio.Resource):
                                   trigger_conf['name']):
                     yield action_name
                     break
-
-
-def _ext_init_api(interpreter, infos, call_cb):
-
-    def encode(x):
-        if isinstance(x, str):
-            return x
-
-        elements = (f"'{k}': {encode(v)}" for k, v in x.items())
-        return f"{{{', '.join(elements)}}}"
-
-    api_dict = {}
-    for info in infos:
-        unit_api_dict = {}
-
-        for function in info.functions:
-            segments = function.split('.')
-            parent = unit_api_dict
-
-            for segment in segments[:-1]:
-                if segment not in parent:
-                    parent[segment] = {}
-
-                parent = parent[segment]
-
-            parent[segments[-1]] = (f"function() {{ return f("
-                                    f"'{info.name}', "
-                                    f"'{function}', "
-                                    f"Array.prototype.slice.call(arguments)"
-                                    f"); }}")
-
-        api_dict[info.name] = unit_api_dict
-
-    units = encode(api_dict)
-    init_fn = interpreter.eval(f"var units; "
-                               f"(function(f) {{ units = {units}; }})")
-    init_fn(call_cb)
-
-
-def _ext_create_action(interpreter, code):
-    return interpreter.eval(f"new Function({json.encode(code)})")
 
 
 def _match_trigger(trigger, type_query, name_query):
