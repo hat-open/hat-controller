@@ -227,7 +227,12 @@ async def test_absolute(monkeypatch, timezone, cron, trigger_timestamps,
 
 
 @pytest.mark.parametrize('function', ['start', 'stop'])
-async def test_invalid_timer(function):
+@pytest.mark.parametrize('name', [
+    'xyz',
+    123,
+    {'abc': 123},
+    []])
+async def test_invalid_timer_name(function, name):
     period = 0.05
     conf = {
         'timezone': 'Europe/Zagreb',
@@ -242,7 +247,7 @@ async def test_invalid_timer(function):
     unit = await aio.call(info.create, conf, trigger_queue.put_nowait)
 
     with pytest.raises(Exception):
-        await aio.call(unit.call, function, ['xyz'], None)
+        await aio.call(unit.call, function, [name], None)
 
     await unit.async_close()
 

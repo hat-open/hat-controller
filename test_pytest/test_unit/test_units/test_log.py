@@ -113,6 +113,47 @@ async def test_log_invalid_level():
     await unit.async_close()
 
 
+@pytest.mark.parametrize('msg', [
+    123,
+    None,
+    {'123': 123},
+    ['a']])
+async def test_log_invalid_message(msg):
+    conf = {'logger': 'xyz'}
+
+    unit = await aio.call(info.create, conf, None)
+
+    with pytest.raises(Exception):
+        await aio.call(unit.call, 'log', ['INFO', msg], None)
+
+    assert unit.is_open
+
+    await unit.async_close()
+
+
+@pytest.mark.parametrize('level', [
+    'debug',
+    'info',
+    'warning',
+    'error'])
+@pytest.mark.parametrize('msg', [
+    123,
+    None,
+    {'123': 123},
+    ['a']])
+async def test_level_invalid_message(level, msg):
+    conf = {'logger': 'xyz'}
+
+    unit = await aio.call(info.create, conf, None)
+
+    with pytest.raises(Exception):
+        await aio.call(unit.call, level, [msg], None)
+
+    assert unit.is_open
+
+    await unit.async_close()
+
+
 async def test_invalid_function():
     conf = {'logger': 'xyz'}
 

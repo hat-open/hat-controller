@@ -134,6 +134,66 @@ async def test_execute(monkeypatch, command):
     await unit.async_close()
 
 
+async def test_read_file_not_exists(tmp_path):
+    unit = await aio.call(info.create, {}, None)
+
+    file_path = tmp_path / 'file_to_read.txt'
+
+    with pytest.raises(Exception):
+        await aio.call(unit.call, 'readFile', [file_path], None)
+
+    await unit.async_close()
+
+
+@pytest.mark.parametrize('function', [
+    'readFile',
+    'writeFile',
+    'appendFile',
+    'deleteFile'])
+@pytest.mark.parametrize('path', [
+    123,
+    {},
+    []])
+async def test_invalid_path(tmp_path, function, path):
+    unit = await aio.call(info.create, {}, None)
+
+    text = "..."
+
+    args = [path]
+    if function in ['writeFile', 'appendFile']:
+        args.append(text)
+    with pytest.raises(Exception):
+        await aio.call(
+            unit.call, function, args, None)
+
+    await unit.async_close()
+
+
+@pytest.mark.parametrize('function', [
+    'writeFile',
+    'appendFile'])
+@pytest.mark.parametrize("text", [123, None, {'abc': 123}])
+async def test_invalid_text(tmp_path, function, text):
+    unit = await aio.call(info.create, {}, None)
+
+    file_path = tmp_path / 'file_to_write.txt'
+
+    with pytest.raises(Exception):
+        await aio.call(
+            unit.call, function, [file_path, text], None)
+
+    await unit.async_close()
+
+
+async def test_execute_invalid_commands():
+    unit = await aio.call(info.create, {}, None)
+
+    with pytest.raises(Exception):
+        await aio.call(unit.call, 'execute', [[1, 23, None]], None)
+
+    await unit.async_close()
+
+
 async def test_invalid_function(monkeypatch):
     unit = await aio.call(info.create, {}, None)
 

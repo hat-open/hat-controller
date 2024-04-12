@@ -131,6 +131,23 @@ async def test_raise_invalid_name(name):
     await unit.async_close()
 
 
+@pytest.mark.parametrize('delay', [
+    '50',
+    {'abc': 123},
+    []])
+async def test_invalid_delay(delay):
+    name = 'abc'
+    data = {'123': 12345}
+    trigger_queue = aio.Queue()
+
+    unit = await aio.call(info.create, None, trigger_queue.put_nowait)
+
+    with pytest.raises(Exception):
+        await aio.call(unit.call, 'raise', [name, data, delay], None)
+
+    await unit.async_close()
+
+
 async def test_invalid_function():
     unit = await aio.call(info.create, None, None)
 
