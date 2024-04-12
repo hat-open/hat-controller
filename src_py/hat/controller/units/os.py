@@ -26,11 +26,17 @@ class OsUnit(common.Unit):
             path = Path(args[0])
             text = args[1]
 
+            if not isinstance(text, str):
+                raise Exception('invalid text type')
+
             return await self._executor.spawn(_ext_write_file, path, text)
 
         if function == 'appendFile':
             path = Path(args[0])
             text = args[1]
+
+            if not isinstance(text, str):
+                raise Exception('invalid text type')
 
             return await self._executor.spawn(_ext_append_file, path, text)
 
@@ -40,6 +46,13 @@ class OsUnit(common.Unit):
             return await self._executor.spawn(_ext_delete_file, path)
 
         if function == 'execute':
+            if not isinstance(args[0], list):
+                raise Exception('invalid args type')
+
+            for arg in args[0]:
+                if not isinstance(arg, str):
+                    raise Exception('invalid args type')
+
             self._executor.spawn(_ext_execute, args[0])
             return
 

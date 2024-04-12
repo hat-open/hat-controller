@@ -39,6 +39,9 @@ class LogUnit(common.Unit):
         else:
             raise Exception('unsupported function')
 
+        if not isinstance(msg, str):
+            raise Exception('invalid message type')
+
         self._log.log(level, msg)
 
 

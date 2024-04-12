@@ -1,12 +1,13 @@
 import contextlib
 import importlib
-import pytest
+import itertools
 import sys
 import types
 import typing
 
+import pytest
+
 from hat import aio
-import itertools
 
 from hat.controller import common
 import hat.controller.engine

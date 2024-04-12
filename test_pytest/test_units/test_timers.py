@@ -1,8 +1,9 @@
 from zoneinfo import ZoneInfo
 import asyncio
 import datetime
-import pytest
 import time
+
+import pytest
 
 from hat import aio
 from hat import json

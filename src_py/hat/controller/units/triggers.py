@@ -29,6 +29,14 @@ class TriggersUnit(common.Unit):
             data = args[1] if len(args) > 1 else None
             delay = args[2] if len(args) > 2 else 0
 
+            if not isinstance(name, str):
+                raise Exception('invalid name type')
+
+            # TODO check if data is not json.Data
+
+            if not isinstance(delay, (int, float)):
+                raise Exception('invalid delay type')
+
             t = common.Trigger(type='triggers/custom',
                                name=name,
                                data=data)

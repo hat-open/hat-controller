@@ -1,5 +1,6 @@
-import pytest
 import subprocess
+
+import pytest
 
 from hat import aio
 from hat import json
