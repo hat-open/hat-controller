@@ -66,7 +66,7 @@ async def test_init_code():
 
     env_conf = {
         'name': 'env1',
-        'init_code': f"units.{unit_name}.{unit_fn}('x', 'y', 123)",
+        'init_code': f"units.{unit_name}.{unit_fn}('x', 'y', 123);",
         'actions': []}
 
     env = hat.controller.environment.Environment(
@@ -91,16 +91,21 @@ async def test_action():
 
     unit = MockUnit(call_cb=on_unit_call)
     unit_name = 'u1'
-    unit_fn = 'f1'
+    unit_fn1 = 'f1.a.b'
+    unit_fn2 = 'f1.a.c'
     unit_proxy = hat.controller.environment.UnitProxy(
         unit=unit,
         info=common.UnitInfo(
             name=unit_name,
-            functions={unit_fn},
+            functions={unit_fn1, unit_fn2},
             create=MockUnit,
             json_schema_id=None,
             json_schema_repo=None))
 
+    code = f"""
+    units.{unit_name}.{unit_fn1}('x', 'y', 123);
+    units.{unit_name}.{unit_fn2}('a', null);
+    """
     env_conf = {
         'name': 'env1',
         'init_code': "",
@@ -108,7 +113,7 @@ async def test_action():
             {'name': 'a1',
              'triggers': [{'type': 'test/a',
                            'name': 'a1'}],
-             'code': f"units.{unit_name}.{unit_fn}('x', 'y', 123)"}]}
+             'code': code}]}
 
     env = hat.controller.environment.Environment(
         environment_conf=env_conf,
@@ -124,8 +129,14 @@ async def test_action():
 
     function, args, triggered_by = await unit_call_queue.get()
 
-    assert function == unit_fn
+    assert function == unit_fn1
     assert args == ['x', 'y', 123]
+    assert triggered_by == trigger
+
+    function, args, triggered_by = await unit_call_queue.get()
+
+    assert function == unit_fn2
+    assert args == ['a', None]
     assert triggered_by == trigger
 
     await env.async_close()
