@@ -1,0 +1,10 @@
+imports:
+    quickjs: peru/quickjs
+
+git module quickjs:
+    url: https://github.com/bellard/quickjs.git
+    rev: 3b45d155c77bbdfe9177b1e03db830d2aff0b2a8
+
+# cp module hat-util:
+#     path: ../hat-util
+#     pick: src_c

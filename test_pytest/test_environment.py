@@ -5,10 +5,8 @@ import pytest
 from hat import aio
 
 from hat.controller import common
+from hat.controller.interpreters import InterpreterType
 import hat.controller.environment
-
-
-interpreter_types = ['DUKTAPE']
 
 
 class MockUnit(common.Unit):
@@ -26,11 +24,11 @@ class MockUnit(common.Unit):
             self._call_cb(function, args, trigger)
 
 
-@pytest.mark.parametrize('interpreter_type', interpreter_types)
+@pytest.mark.parametrize('interpreter_type', InterpreterType)
 async def test_create(interpreter_type):
     env_conf = {
         'name': 'env1',
-        'interpreter': interpreter_type,
+        'interpreter': interpreter_type.value,
         'init_code': "",
         'actions': []}
 
@@ -52,7 +50,7 @@ async def test_create(interpreter_type):
     await env.async_close()
 
 
-@pytest.mark.parametrize('interpreter_type', interpreter_types)
+@pytest.mark.parametrize('interpreter_type', InterpreterType)
 async def test_init_code(interpreter_type):
     unit_call_queue = aio.Queue()
 
@@ -73,7 +71,7 @@ async def test_init_code(interpreter_type):
 
     env_conf = {
         'name': 'env1',
-        'interpreter': interpreter_type,
+        'interpreter': interpreter_type.value,
         'init_code': f"units.{unit_name}.{unit_fn}('x', 'y', 123);",
         'actions': []}
 
@@ -91,7 +89,7 @@ async def test_init_code(interpreter_type):
     await env.async_close()
 
 
-@pytest.mark.parametrize('interpreter_type', interpreter_types)
+@pytest.mark.parametrize('interpreter_type', InterpreterType)
 async def test_action(interpreter_type):
     unit_call_queue = aio.Queue()
 
@@ -117,7 +115,7 @@ async def test_action(interpreter_type):
     """
     env_conf = {
         'name': 'env1',
-        'interpreter': interpreter_type,
+        'interpreter': interpreter_type.value,
         'init_code': "",
         'actions': [
             {'name': 'a1',
@@ -152,7 +150,7 @@ async def test_action(interpreter_type):
     await env.async_close()
 
 
-@pytest.mark.parametrize('interpreter_type', interpreter_types)
+@pytest.mark.parametrize('interpreter_type', InterpreterType)
 @pytest.mark.parametrize('trigger_type, trigger_name, triggered_actions', [
     ('test/a', 'x/a', ['a1', 'a3', 'a4', 'a5', 'a7']),
     ('test/a/b', 'x/a', ['a3', 'a5', 'a7']),
@@ -193,7 +191,7 @@ async def test_trigger_subscription(interpreter_type, trigger_type,
 
     env_conf = {
         'name': 'env1',
-        'interpreter': interpreter_type,
+        'interpreter': interpreter_type.value,
         'init_code': "",
         'actions': [
             {'name': 'a1',

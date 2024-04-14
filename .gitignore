@@ -1,5 +1,9 @@
 /.doit.db
+/.peru
 /build
 /compile_flags.txt
+/peru
+/src_py/**/*.dll
+/src_py/**/*.so
 /src_py/**/json_schema_repo.json
 __pycache__
