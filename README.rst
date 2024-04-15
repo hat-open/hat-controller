@@ -26,7 +26,7 @@ Install
 
 `hat-controller` is available as `PyPI project`_::
 
-    $ pip install hat-controlle
+    $ pip install hat-controller
 
 
 Build
