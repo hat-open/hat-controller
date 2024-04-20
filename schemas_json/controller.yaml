@@ -18,7 +18,7 @@ properties:
         type: array
         items:
             $ref: "hat-controller://controller.yaml#/$defs/unit"
-    environment:
+    environments:
         type: array
         items:
             $ref: "hat-controller://controller.yaml#/$defs/environment"
