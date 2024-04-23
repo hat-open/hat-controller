@@ -13,8 +13,6 @@ from hat.doit.py import (get_task_build_wheel,
                          run_flake8,
                          get_py_versions)
 
-from .pymodules import py_limited_api
-
 from . import pymodules
 
 
@@ -42,14 +40,16 @@ build_docs_dir = build_dir / 'docs'
 
 json_schema_repo_path = src_py_dir / 'hat/controller/json_schema_repo.json'
 
+py_limited_api = next(iter(common.PyVersion))
+
 
 def task_clean_all():
     """Clean all"""
     return {'actions': [(common.rm_rf, [
         build_dir,
         json_schema_repo_path,
-        *(src_py_dir /
-          'hat/controller/interpreters').glob('_quickjs.*')
+        *(src_py_dir / 'hat/controller/interpreters').glob('*.so'),
+        *(src_py_dir / 'hat/controller/interpreters').glob('*.pyd')
         ])]}
 
 

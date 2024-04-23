@@ -7,6 +7,7 @@ from hat import aio
 from hat import json
 
 from hat.controller import common
+import hat.controller.evaluator
 import hat.controller.interpreters
 
 
@@ -51,17 +52,17 @@ class Environment(aio.Resource):
                             for action_conf in self._action_confs.values()}
             infos = (proxy.info for proxy in self._proxies.values())
 
-            interpreter = await self._executor.spawn(
-                hat.controller.interpreters.create_interpreter,
+            evaluator = await self._executor.spawn(
+                hat.controller.evaluator.Evaluator,
                 interpreter_type, action_codes, infos, self._ext_call)
 
-            await self._executor.spawn(interpreter.eval_code, init_code)
+            await self._executor.spawn(evaluator.eval_code, init_code)
 
             while True:
                 self._last_trigger = await self._trigger_queue.get()
 
                 for action_name in self._get_matching_action_names():
-                    await self._executor.spawn(interpreter.eval_action,
+                    await self._executor.spawn(evaluator.eval_action,
                                                action_name)
 
         except Exception as e:

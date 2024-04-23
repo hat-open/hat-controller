@@ -1,6 +1,20 @@
 #include "quickjs.h"
 
 
+static JSValue get_function_proto(JSContext *ctx) {
+    // TODO there should be better way to obtain function prototype
+
+    JSValue fn = JS_NewCFunction(ctx, NULL, "", 0);
+    if (JS_IsException(fn))
+        return fn;
+
+    JSValue proto = JS_GetPrototype(ctx, fn);
+    JS_FreeValue(ctx, fn);
+
+    return proto;
+}
+
+
 static void PyFunction_finalizer(JSRuntime *rt, JSValue val) {
     Interpreter *inter = JS_GetRuntimeOpaque(rt);
     if (!inter)
@@ -95,7 +109,12 @@ JSValue create_pyfunction(JSContext *ctx, PyObject *fn) {
         return JS_Throw(ctx,
                         JS_NewString(ctx, "interpreter initialization error"));
 
-    JSValue val = JS_NewObjectClass(ctx, inter->pyfunction_cid);
+    JSValue proto = get_function_proto(ctx);
+    if (JS_IsException(proto))
+        return proto;
+
+    JSValue val = JS_NewObjectProtoClass(ctx, proto, inter->pyfunction_cid);
+    JS_FreeValue(ctx, proto);
     if (JS_IsException(val))
         return val;
 

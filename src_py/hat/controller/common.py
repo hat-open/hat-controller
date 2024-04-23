@@ -37,18 +37,6 @@ class Trigger(typing.NamedTuple):
     data: json.Data
 
 
-class Interpreter(abc.ABC):
-    """Interpreter"""
-
-    @abc.abstractmethod
-    def eval_code(self, code: str):
-        """Evaluate code"""
-
-    @abc.abstractmethod
-    def eval_action(self, action: ActionName):
-        """Evaluate action"""
-
-
 class Unit(aio.Resource):
     """Unit"""
 

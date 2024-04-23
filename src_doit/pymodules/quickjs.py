@@ -8,8 +8,7 @@ from hat.doit.c import (get_py_ext_suffix,
                         CBuild)
 
 
-__all__ = ['task_pymodules',
-           'task_pymodules_quickjs',
+__all__ = ['task_pymodules_quickjs',
            'task_pymodules_quickjs_obj',
            'task_pymodules_quickjs_dep',
            'task_pymodules_quickjs_cleanup']
@@ -41,7 +40,6 @@ quickjs_c_flags = [
     '-D_GNU_SOURCE',
     '-DCONFIG_VERSION="2024-01-13"',
     '-O2',
-    # '-O0',
     # '-ggdb'
     ]
 quickjs_ld_flags = [*get_py_ld_flags(py_limited_api=py_limited_api)]
@@ -54,12 +52,6 @@ quickjs_build = CBuild(src_paths=quickjs_src_paths,
                        ld_libs=quickjs_ld_libs,
                        task_dep=['pymodules_quickjs_cleanup',
                                  'peru'])
-
-
-def task_pymodules():
-    """Build pymodules"""
-    return {'actions': None,
-            'task_dep': ['pymodules_quickjs']}
 
 
 def task_pymodules_quickjs():
