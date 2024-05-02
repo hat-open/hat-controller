@@ -105,7 +105,7 @@ JSValue py_obj_to_js_val(JSContext *ctx, PyObject *obj) {
         return py_int_to_js_val(ctx, obj);
 
     if (PyFloat_Check(obj))
-        return py_int_to_js_val(ctx, obj);
+        return py_float_to_js_val(ctx, obj);
 
     if (PyUnicode_Check(obj))
         return py_str_to_js_val(ctx, obj);

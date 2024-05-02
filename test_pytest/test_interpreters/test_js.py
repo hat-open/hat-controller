@@ -109,3 +109,12 @@ def test_t2(interpreter_type):
     fn = interpreter.eval('(function () { return 123; })')
     del interpreter
     assert fn() == 123
+
+
+@pytest.mark.parametrize('interpreter_type', interpreter_types)
+def test_t3(interpreter_type):
+    interpreter = hat.controller.interpreters.create_interpreter(
+        interpreter_type)
+    fn = interpreter.eval("(function (x) { return 'abc' + x.value; })")
+    result = fn({'value': 123.45})
+    assert result == 'abc123.45'
