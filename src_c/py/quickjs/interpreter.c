@@ -39,6 +39,7 @@ static PyObject *Interpreter_new(PyTypeObject *type, PyObject *args,
     return (PyObject *)self;
 
 error:
+
     if (self->ctx) {
         JS_FreeContext(self->ctx);
         self->ctx = NULL;

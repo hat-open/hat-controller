@@ -1,5 +1,7 @@
 import pytest
 
+from hat import json
+
 import hat.controller.interpreters
 
 
@@ -118,3 +120,41 @@ def test_t3(interpreter_type):
     fn = interpreter.eval("(function (x) { return 'abc' + x.value; })")
     result = fn({'value': 123.45})
     assert result == 'abc123.45'
+
+
+@pytest.mark.parametrize('interpreter_type', interpreter_types)
+def test_t4(interpreter_type):
+    interpreter = hat.controller.interpreters.create_interpreter(
+        interpreter_type)
+    fn = interpreter.eval("new Function('(function () { return x.y.z; })()')")
+    with pytest.raises(Exception):
+        fn()
+
+
+@pytest.mark.parametrize('interpreter_type', interpreter_types)
+def test_t5(interpreter_type):
+    interpreter = hat.controller.interpreters.create_interpreter(
+        interpreter_type)
+
+    code = """
+
+    function abc() {
+        return fn();
+    }
+
+    return abc();
+
+    """
+
+    fn = interpreter.eval(f"new Function('fn', {json.encode(code)})")
+
+    def cb():
+        raise Exception('abc')
+
+    try:
+        fn(cb)
+        assert False
+
+    except Exception as e:
+        lines = str(e).split('\n')
+        assert lines[0].endswith('abc')

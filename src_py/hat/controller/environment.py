@@ -25,6 +25,7 @@ class Environment(aio.Resource):
                  environment_conf: json.Data,
                  proxies: Collection[UnitProxy],
                  trigger_queue_size: int = 4096):
+        self._name = environment_conf['name']
         self._loop = asyncio.get_running_loop()
         self._executor = aio.Executor(log_exceptions=False)
         self._trigger_queue = aio.Queue(trigger_queue_size)
@@ -56,17 +57,19 @@ class Environment(aio.Resource):
                 hat.controller.evaluator.Evaluator,
                 interpreter_type, action_codes, infos, self._ext_call)
 
-            await self._executor.spawn(evaluator.eval_code, init_code)
+            await self._executor.spawn(self._ext_eval_init, evaluator,
+                                       init_code)
 
             while True:
                 self._last_trigger = await self._trigger_queue.get()
 
                 for action_name in self._get_matching_action_names():
-                    await self._executor.spawn(evaluator.eval_action,
-                                               action_name)
+                    await self._executor.spawn(self._ext_eval_action,
+                                               evaluator, action_name)
 
         except Exception as e:
-            mlog.error('run loop error: %s', e, exc_info=e)
+            mlog.error('environment %s run loop error: %s',
+                       self._name, e, exc_info=e)
 
         finally:
             self.close()
@@ -81,6 +84,22 @@ class Environment(aio.Resource):
         coro = self._call(unit_name, function, args)
         future = asyncio.run_coroutine_threadsafe(coro, self._loop)
         return future.result()
+
+    def _ext_eval_init(self, evaluator, code):
+        try:
+            evaluator.eval_code(code)
+
+        except Exception as e:
+            mlog.error("environment %s init error: %s",
+                       self._name, e, exc_info=e)
+
+    def _ext_eval_action(self, evaluator, action_name):
+        try:
+            evaluator.eval_action(action_name)
+
+        except Exception as e:
+            mlog.error("environment %s action %s error: %s",
+                       self._name, action_name, e, exc_info=e)
 
     def _get_matching_action_names(self):
         for action_name, action_conf in self._action_confs.items():
