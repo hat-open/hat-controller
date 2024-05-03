@@ -1,4 +1,7 @@
-#include "quickjs.h"
+#include "module.h"
+
+#include "interpreter.h"
+#include "jsfunction.h"
 
 
 static int module_exec(PyObject *module) {

@@ -1,4 +1,7 @@
-#include "quickjs.h"
+#include "py_to_js.h"
+
+#include "error.h"
+#include "pyfunction.h"
 
 
 static JSValue py_int_to_js_val(JSContext *ctx, PyObject *obj) {

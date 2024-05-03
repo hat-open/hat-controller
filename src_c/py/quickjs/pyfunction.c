@@ -1,4 +1,9 @@
-#include "quickjs.h"
+#include "pyfunction.h"
+
+#include "error.h"
+#include "interpreter.h"
+#include "js_to_py.h"
+#include "py_to_js.h"
 
 
 static JSValue get_function_proto(JSContext *ctx) {

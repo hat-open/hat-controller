@@ -1,4 +1,8 @@
-#include "quickjs.h"
+#include "interpreter.h"
+
+#include "js_to_py.h"
+#include "module.h"
+#include "pyfunction.h"
 
 
 static PyObject *Interpreter_new(PyTypeObject *type, PyObject *args,

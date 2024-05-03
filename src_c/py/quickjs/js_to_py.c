@@ -1,4 +1,7 @@
-#include "quickjs.h"
+#include "js_to_py.h"
+
+#include "error.h"
+#include "jsfunction.h"
 
 
 static void free_js_props(JSContext *ctx, JSPropertyEnum *props, size_t len) {

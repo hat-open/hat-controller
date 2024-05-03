@@ -1,4 +1,4 @@
-#include "quickjs.h"
+#include "error.h"
 
 
 JSValue js_throw_py_err(JSContext *ctx, const char *alternative) {

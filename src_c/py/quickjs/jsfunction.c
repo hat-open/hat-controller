@@ -1,4 +1,7 @@
-#include "quickjs.h"
+#include "jsfunction.h"
+
+#include "js_to_py.h"
+#include "py_to_js.h"
 
 
 static void free_js_vals(JSContext *ctx, JSValue *vals, size_t vals_len) {
