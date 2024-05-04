@@ -46,6 +46,7 @@ $defs:
                 type: string
             interpreter:
                 enum:
+                    - CPYTHON
                     - DUKTAPE
                     - QUICKJS
             init_code:

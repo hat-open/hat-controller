@@ -7,7 +7,7 @@ from hat import aio
 from hat import json
 
 from hat.controller import common
-import hat.controller.evaluator
+import hat.controller.evaluators
 import hat.controller.interpreters
 
 
@@ -54,7 +54,7 @@ class Environment(aio.Resource):
             infos = (proxy.info for proxy in self._proxies.values())
 
             evaluator = await self._executor.spawn(
-                hat.controller.evaluator.Evaluator,
+                hat.controller.evaluators.create_evaluator,
                 interpreter_type, action_codes, infos, self._ext_call)
 
             await self._executor.spawn(self._ext_eval_init, evaluator,
