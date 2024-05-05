@@ -1,9 +1,7 @@
 from .pymodules import *  # NOQA
 
-from pathlib import Path
 import sys
 
-from hat.doit import common
 from hat.doit.c import get_task_clang_format
 from hat.doit.docs import (build_sphinx,
                            build_pdoc)
@@ -14,6 +12,7 @@ from hat.doit.py import (get_task_build_wheel,
                          get_py_versions)
 
 from . import pymodules
+from . import common
 
 
 __all__ = ['task_clean_all',
@@ -28,47 +27,37 @@ __all__ = ['task_clean_all',
            *pymodules.__all__]
 
 
-build_dir = Path('build')
-docs_dir = Path('docs')
-pytest_dir = Path('test_pytest')
-schemas_json_dir = Path('schemas_json')
-src_c_dir = Path('src_c')
-src_py_dir = Path('src_py')
-
-build_py_dir = build_dir / 'py'
-build_docs_dir = build_dir / 'docs'
-
-json_schema_repo_path = src_py_dir / 'hat/controller/json_schema_repo.json'
-
-py_limited_api = next(iter(common.PyVersion))
+json_schema_repo_path = (common.src_py_dir /
+                         'hat/controller/json_schema_repo.json')
 
 
 def task_clean_all():
     """Clean all"""
     return {'actions': [(common.rm_rf, [
-        build_dir,
+        common.build_dir,
         json_schema_repo_path,
-        *(src_py_dir / 'hat/controller/interpreters').glob('*.so'),
-        *(src_py_dir / 'hat/controller/interpreters').glob('*.pyd')
+        *(common.src_py_dir / 'hat/controller/interpreters').glob('*.so'),
+        *(common.src_py_dir / 'hat/controller/interpreters').glob('*.pyd')
         ])]}
 
 
 def task_build():
     """Build"""
-    return get_task_build_wheel(src_dir=src_py_dir,
-                                build_dir=build_py_dir,
-                                py_versions=get_py_versions(py_limited_api),
-                                py_limited_api=py_limited_api,
-                                platform=common.target_platform,
-                                is_purelib=False,
-                                task_dep=['json_schema_repo',
-                                          'pymodules'])
+    return get_task_build_wheel(
+        src_dir=common.src_py_dir,
+        build_dir=common.build_py_dir,
+        py_versions=get_py_versions(common.py_limited_api),
+        py_limited_api=common.py_limited_api,
+        platform=common.target_platform,
+        is_purelib=False,
+        task_dep=['json_schema_repo',
+                  'pymodules'])
 
 
 def task_check():
     """Check with flake8"""
-    return {'actions': [(run_flake8, [src_py_dir]),
-                        (run_flake8, [pytest_dir])]}
+    return {'actions': [(run_flake8, [common.src_py_dir]),
+                        (run_flake8, [common.pytest_dir])]}
 
 
 def task_test():
@@ -81,12 +70,12 @@ def task_docs():
     """Docs"""
 
     def build():
-        build_sphinx(src_dir=docs_dir,
-                     dst_dir=build_docs_dir,
+        build_sphinx(src_dir=common.docs_dir,
+                     dst_dir=common.build_docs_dir,
                      project='hat-controller',
                      extensions=['sphinxcontrib.programoutput'])
         build_pdoc(module='hat.controller',
-                   dst_dir=build_docs_dir / 'py_api')
+                   dst_dir=common.build_docs_dir / 'py_api')
 
     return {'actions': [build],
             'task_dep': ['json_schema_repo']}
@@ -94,8 +83,8 @@ def task_docs():
 
 def task_format():
     """Format"""
-    yield from get_task_clang_format([*(src_c_dir / 'py').rglob('*.c'),
-                                      *(src_c_dir / 'py').rglob('*.h')])
+    yield from get_task_clang_format([*(common.src_c_dir / 'py').rglob('*.c'),
+                                      *(common.src_c_dir / 'py').rglob('*.h')])
 
 
 def task_peru():
@@ -105,8 +94,8 @@ def task_peru():
 
 def task_json_schema_repo():
     """Generate JSON Schema Repository"""
-    return common.get_task_json_schema_repo(schemas_json_dir.rglob('*.yaml'),
-                                            json_schema_repo_path)
+    return common.get_task_json_schema_repo(
+        common.schemas_json_dir.rglob('*.yaml'), json_schema_repo_path)
 
 
 def task_pip_requirements():

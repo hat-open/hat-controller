@@ -1,5 +1,5 @@
-#ifndef PY_QUICKJS_MODULE_H
-#define PY_QUICKJS_MODULE_H
+#ifndef PY_LUA_MODULE_H
+#define PY_LUA_MODULE_H
 
 #include <Python.h>
 
@@ -9,7 +9,7 @@ extern "C" {
 
 typedef struct {
     PyObject *interpreter_type;
-    PyObject *jsfunction_type;
+    PyObject *luafunction_type;
 } ModuleState;
 
 #ifdef __cplusplus

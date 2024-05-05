@@ -1,5 +1,6 @@
 imports:
     duktape: peru/duktape
+    lua: peru/lua
     quickjs: peru/quickjs
 
 curl module duktape:
@@ -7,6 +8,12 @@ curl module duktape:
     sha1: 8200c8e417dbab7adcc12c4dbdef7651cfc55794
     unpack: tar
     export: duktape-2.7.0
+
+curl module lua:
+    url: https://www.lua.org/ftp/lua-5.4.6.tar.gz
+    sha1: 83f41abf92620dd15f022e6f863807b07e318495
+    unpack: tar
+    export: lua-5.4.6
 
 git module quickjs:
     url: https://github.com/bozokopic/quickjs.git

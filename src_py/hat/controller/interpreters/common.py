@@ -1,29 +1,40 @@
 from hat.controller.common import *  # NOQA
 
+from collections.abc import Callable
+
 import abc
 import enum
 import typing
 
 
-JsData: typing.TypeAlias = (None | bool | int | float | str |
-                            typing.List['JsData'] |
-                            typing.Dict[str, 'JsData'] |
-                            typing.Callable)
-"""Supported JavaScript data types"""
+Data: typing.TypeAlias = (None | bool | int | float | str |
+                          typing.List['Data'] |
+                          typing.Dict[str, 'Data'] |
+                          Callable)
+"""Supported interpreter data types"""
 
 
 class InterpreterType(enum.Enum):
-    DUKTAPE = 'DUKTAPE'
-    QUICKJS = 'QUICKJS'
     CPYTHON = 'CPYTHON'
+    DUKTAPE = 'DUKTAPE'
+    LUA = 'LUA'
+    QUICKJS = 'QUICKJS'
 
 
 class JsInterpreter(abc.ABC):
     """JavaScript interpreter"""
 
     @abc.abstractmethod
-    def eval(self, code: str) -> JsData:
+    def eval(self, code: str) -> Data:
         """Evaluate code"""
+
+
+class LuaInterpreter(abc.ABC):
+    """Lua interpreter"""
+
+    @abc.abstractmethod
+    def load(self, code: str, name: str | None = None) -> Callable[[], Data]:
+        """Load code"""
 
 
 class PyInterpreter(abc.ABC):
@@ -39,4 +50,4 @@ class PyInterpreter(abc.ABC):
         """Evaluate code"""
 
 
-Interpreter: typing.TypeAlias = JsInterpreter | PyInterpreter
+Interpreter: typing.TypeAlias = JsInterpreter | LuaInterpreter | PyInterpreter

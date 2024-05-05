@@ -1,11 +1,9 @@
-from pathlib import Path
-
-from hat.doit import common
-from hat.doit.c import (get_py_ext_suffix,
-                        get_py_c_flags,
+from hat.doit.c import (get_py_c_flags,
                         get_py_ld_flags,
                         get_py_ld_libs,
                         CBuild)
+
+from .. import common
 
 
 __all__ = ['task_pymodules_quickjs',
@@ -14,36 +12,27 @@ __all__ = ['task_pymodules_quickjs',
            'task_pymodules_quickjs_cleanup']
 
 
-py_limited_api = next(iter(common.PyVersion))
-py_ext_suffix = get_py_ext_suffix(py_limited_api=py_limited_api)
-
-build_dir = Path('build')
-peru_dir = Path('peru')
-src_c_dir = Path('src_c')
-src_py_dir = Path('src_py')
-
-pymodules_build_dir = build_dir / 'pymodules'
-
-quickjs_path = (src_py_dir / 'hat/controller/interpreters/_quickjs'
-                ).with_suffix(py_ext_suffix)
+quickjs_path = (common.src_py_dir / 'hat/controller/interpreters/_quickjs'
+                ).with_suffix(common.py_ext_suffix)
 quickjs_files = ['cutils.c', 'libbf.c', 'libregexp.c', 'libunicode.c',
                  'quickjs.c', 'unicode_gen.c']
-quickjs_src_paths = [*(src_c_dir / 'py/quickjs').rglob('*.c'),
-                     *((peru_dir / 'quickjs') / i for i in quickjs_files)]
-quickjs_build_dir = (pymodules_build_dir / 'quickjs' /
+quickjs_src_paths = [*(common.src_c_dir / 'py/quickjs').rglob('*.c'),
+                     *((common.peru_dir / 'quickjs') / i
+                       for i in quickjs_files)]
+quickjs_build_dir = (common.build_pymodules_dir / 'quickjs' /
                      f'{common.target_platform.name.lower()}_'
                      f'{common.target_py_version.name.lower()}')
 quickjs_c_flags = [
-    *get_py_c_flags(py_limited_api=py_limited_api),
-    f"-I{peru_dir / 'quickjs'}",
+    *get_py_c_flags(py_limited_api=common.py_limited_api),
+    f"-I{common.peru_dir / 'quickjs'}",
     '-fPIC',
     '-D_GNU_SOURCE',
     '-DCONFIG_VERSION="2024-01-13"',
     '-O2',
     # '-ggdb'
     ]
-quickjs_ld_flags = [*get_py_ld_flags(py_limited_api=py_limited_api)]
-quickjs_ld_libs = [*get_py_ld_libs(py_limited_api=py_limited_api)]
+quickjs_ld_flags = [*get_py_ld_flags(py_limited_api=common.py_limited_api)]
+quickjs_ld_libs = [*get_py_ld_libs(py_limited_api=common.py_limited_api)]
 
 quickjs_build = CBuild(src_paths=quickjs_src_paths,
                        build_dir=quickjs_build_dir,
