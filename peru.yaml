@@ -1,15 +1,16 @@
 imports:
-    quickjs: peru/quickjs
     duktape: peru/duktape
-
-git module quickjs:
-    url: https://github.com/bellard/quickjs.git
-    rev: 3b45d155c77bbdfe9177b1e03db830d2aff0b2a8
+    quickjs: peru/quickjs
 
 curl module duktape:
     url: https://duktape.org/duktape-2.7.0.tar.xz
     sha1: 8200c8e417dbab7adcc12c4dbdef7651cfc55794
     unpack: tar
+    export: duktape-2.7.0
+
+git module quickjs:
+    url: https://github.com/bozokopic/quickjs.git
+    rev: 95b81bf454844a07ec73279ad521d49aafb7fcd8
 
 # cp module hat-util:
 #     path: ../hat-util

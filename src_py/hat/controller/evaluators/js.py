@@ -17,9 +17,14 @@ class JsEvaluator(common.Evaluator):
         self._actions = {}
 
         _init_interpreter(interpreter, infos, call_cb)
+
         for action, code in action_codes.items():
-            self._actions[action] = interpreter.eval(
-                _create_action_code(code))
+            try:
+                self._actions[action] = interpreter.eval(
+                    _create_action_code(code))
+
+            except Exception as e:
+                raise Exception(f'action {action} error: {e}') from e
 
     def eval_code(self, code: str):
         self._interpreter.eval(code)

@@ -27,13 +27,13 @@ pymodules_build_dir = build_dir / 'pymodules'
 duktape_path = (src_py_dir / 'hat/controller/interpreters/_duktape'
                 ).with_suffix(py_ext_suffix)
 duktape_src_paths = [*(src_c_dir / 'py/duktape').rglob('*.c'),
-                     *(peru_dir / 'duktape/duktape-2.7.0/src').rglob('*.c')]
+                     *(peru_dir / 'duktape/src').rglob('*.c')]
 duktape_build_dir = (pymodules_build_dir / 'duktape' /
                      f'{common.target_platform.name.lower()}_'
                      f'{common.target_py_version.name.lower()}')
 duktape_c_flags = [
     *get_py_c_flags(py_limited_api=py_limited_api),
-    f"-I{peru_dir / 'duktape/duktape-2.7.0/src'}",
+    f"-I{peru_dir / 'duktape/src'}",
     '-fPIC',
     '-D_GNU_SOURCE',
     '-O2',

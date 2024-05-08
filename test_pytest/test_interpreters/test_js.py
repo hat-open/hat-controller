@@ -158,3 +158,29 @@ def test_t5(interpreter_type):
     except Exception as e:
         lines = str(e).split('\n')
         assert lines[0].endswith('abc')
+
+
+@pytest.mark.parametrize('interpreter_type', interpreter_types)
+def test_t6(interpreter_type):
+    interpreter = hat.controller.interpreters.create_interpreter(
+        interpreter_type)
+
+    code = """
+
+    function abc() {
+        throw new Error('abc');
+    }
+
+    return abc();
+
+    """
+
+    fn = interpreter.eval(f"new Function({json.encode(code)})")
+
+    try:
+        fn()
+        assert False
+
+    except Exception as e:
+        lines = str(e).split('\n')
+        assert lines[0].endswith('abc')

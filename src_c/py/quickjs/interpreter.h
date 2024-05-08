@@ -4,6 +4,10 @@
 #include <Python.h>
 #include <quickjs.h>
 
+#ifndef JS_INVALID_CLASS_ID
+#define JS_INVALID_CLASS_ID 0
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
