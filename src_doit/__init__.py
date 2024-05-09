@@ -74,8 +74,8 @@ def task_docs():
                      dst_dir=common.build_docs_dir,
                      project='hat-controller',
                      extensions=['sphinxcontrib.programoutput'])
-        build_pdoc(module='hat.controller',
-                   dst_dir=common.build_docs_dir / 'py_api')
+        # build_pdoc(module='hat.controller',
+        #            dst_dir=common.build_docs_dir / 'py_api')
 
     return {'actions': [build],
             'task_dep': ['json_schema_repo']}
