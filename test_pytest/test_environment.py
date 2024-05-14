@@ -156,6 +156,36 @@ async def test_action(interpreter_type):
 
 
 @pytest.mark.parametrize('interpreter_type', js_interpreter_types)
+async def test_action_exception(interpreter_type, caplog):
+    code = "throw new Error('test error');"
+    env_conf = {
+        'name': 'env1',
+        'interpreter': interpreter_type.value,
+        'init_code': "",
+        'actions': [
+            {'name': 'a1',
+             'triggers': [{'type': 'test/a',
+                           'name': 'a1'}],
+             'code': code}]}
+
+    env = hat.controller.environment.Environment(
+        environment_conf=env_conf,
+        proxies=[])
+
+    trigger = common.Trigger(type='test/a',
+                             name='a1',
+                             data=None)
+    await env.process_trigger(trigger)
+
+    await asyncio.sleep(0.01)
+
+    assert env.is_open
+    assert len(caplog.records) == 1
+
+    await env.async_close()
+
+
+@pytest.mark.parametrize('interpreter_type', js_interpreter_types)
 @pytest.mark.parametrize('trigger_type, trigger_name, triggered_actions', [
     ('test/a', 'x/a', ['a1', 'a3', 'a4', 'a5', 'a7']),
     ('test/a/b', 'x/a', ['a3', 'a5', 'a7']),

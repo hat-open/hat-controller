@@ -7,7 +7,7 @@ from hat.controller.evaluators import common
 class LuaEvaluator(common.Evaluator):
 
     def __init__(self,
-                 interpreter: interpreters.JsInterpreter,
+                 interpreter: interpreters.LuaInterpreter,
                  action_codes: dict[common.ActionName, str],
                  infos: Iterable[common.UnitInfo],
                  call_cb: common.CallCb):
