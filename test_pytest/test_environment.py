@@ -157,7 +157,23 @@ async def test_action(interpreter_type):
 
 @pytest.mark.parametrize('interpreter_type', js_interpreter_types)
 async def test_action_exception(interpreter_type, caplog):
-    code = "throw new Error('test error');"
+    unit_call_queue = aio.Queue()
+
+    def on_unit_call(function, args, trigger):
+        unit_call_queue.put_nowait((function, args, trigger))
+
+    unit = MockUnit(call_cb=on_unit_call)
+    unit_name = 'u1'
+    unit_fn = 'f1'
+    unit_proxy = hat.controller.environment.UnitProxy(
+        unit=unit,
+        info=common.UnitInfo(
+            name=unit_name,
+            functions={unit_fn},
+            create=MockUnit,
+            json_schema_id=None,
+            json_schema_repo=None))
+
     env_conf = {
         'name': 'env1',
         'interpreter': interpreter_type.value,
@@ -166,21 +182,43 @@ async def test_action_exception(interpreter_type, caplog):
             {'name': 'a1',
              'triggers': [{'type': 'test/a',
                            'name': 'a1'}],
-             'code': code}]}
+             'code': "throw new Error('test error');"},
+            {'name': 'a2',
+             'triggers': [{'type': 'test/a',
+                           'name': 'a2'}],
+             'code': f"units.{unit_name}.{unit_fn}('abc', 123);"}]}
 
     env = hat.controller.environment.Environment(
         environment_conf=env_conf,
-        proxies=[])
+        proxies=[unit_proxy])
 
-    trigger = common.Trigger(type='test/a',
-                             name='a1',
-                             data=None)
-    await env.process_trigger(trigger)
-
+    trigger_a1 = common.Trigger(type='test/a',
+                                name='a1',
+                                data=None)
+    await env.process_trigger(trigger_a1)
     await asyncio.sleep(0.01)
 
     assert env.is_open
     assert len(caplog.records) == 1
+
+    # action is run again after exception
+    await env.process_trigger(trigger_a1)
+    await asyncio.sleep(0.01)
+
+    assert env.is_open
+    assert len(caplog.records) == 2
+
+    # another action is called after previous action raised exception
+    trigger = common.Trigger(type='test/a',
+                             name='a2',
+                             data=None)
+    await env.process_trigger(trigger)
+
+    function, args, triggered_by = await unit_call_queue.get()
+
+    assert function == unit_fn
+    assert args == ['abc', 123]
+    assert triggered_by == trigger
 
     await env.async_close()
 
