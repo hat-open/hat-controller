@@ -108,16 +108,16 @@ async def test_create_evaluator(monkeypatch, interpreter_type):
         unit=unit,
         info=unit_info)
 
+    loop = asyncio.get_running_loop()
     evaluator_args_queue = aio.Queue()
 
-    def mock_create_evaluator(*args):
-        evaluator = MockEvaluator(*args)
-        evaluator_args_queue.put_nowait(args)
-        return evaluator
+    def ext_create_mock_evaluator(*args):
+        loop.call_soon_threadsafe(evaluator_args_queue.put_nowait, args)
+        return MockEvaluator(*args)
 
     with monkeypatch.context() as ctx:
         ctx.setattr(hat.controller.evaluators, 'create_evaluator',
-                    mock_create_evaluator)
+                    ext_create_mock_evaluator)
 
         env = hat.controller.environment.Environment(
             environment_conf=env_conf,
@@ -145,11 +145,16 @@ async def test_init_code(monkeypatch):
         'init_code': init_code,
         'actions': []}
 
+    loop = asyncio.get_running_loop()
     init_code_queue = aio.Queue()
+
+    def ext_on_init_code(code):
+        loop.call_soon_threadsafe(init_code_queue.put_nowait, code)
+
     with monkeypatch.context() as ctx:
         ctx.setattr(hat.controller.evaluators, 'create_evaluator',
                     functools.partial(MockEvaluator,
-                                      eval_code_cb=init_code_queue.put_nowait))
+                                      eval_code_cb=ext_on_init_code))
 
         env = hat.controller.environment.Environment(
             environment_conf=env_conf,
@@ -173,19 +178,24 @@ async def test_action(monkeypatch):
                            'name': 'a1'}],
              'code': code}]}
 
-    eval_action_queue = aio.Queue()
+    loop = asyncio.get_running_loop()
+    action_queue = aio.Queue()
+
+    def ext_on_eval_action(action):
+        loop.call_soon_threadsafe(action_queue.put_nowait, action)
+
     with monkeypatch.context() as ctx:
         ctx.setattr(hat.controller.evaluators, 'create_evaluator',
                     functools.partial(
                         MockEvaluator,
-                        eval_action_cb=eval_action_queue.put_nowait))
+                        eval_action_cb=ext_on_eval_action))
 
         env = hat.controller.environment.Environment(
             environment_conf=env_conf,
             proxies=[])
 
         await asyncio.sleep(0.01)
-        assert eval_action_queue.empty()
+        assert action_queue.empty()
 
         process_trigger_res = await env.process_trigger(common.Trigger(
             type='test',
@@ -193,14 +203,13 @@ async def test_action(monkeypatch):
             data=None))
         assert process_trigger_res is None
 
-        action = await eval_action_queue.get()
+        action = await action_queue.get()
         assert action == 'a1'
 
         await env.async_close()
 
 
-@pytest.mark.parametrize('with_trigger', [True, False])
-async def test_call_cb(monkeypatch, with_trigger):
+async def test_unit_call_cb_init(monkeypatch):
     unit_call_args_queue = aio.Queue()
     unit_call_result = {'unit': 'result',
                         'abc': 123}
@@ -227,12 +236,18 @@ async def test_call_cb(monkeypatch, with_trigger):
         'init_code': "",
         'actions': []}
 
-    call_cb_queue = aio.Queue()
+    loop = asyncio.get_running_loop()
+    call_result_queue = aio.Queue()
+
+    def ext_on_init_code(call_cb, code):
+        result = call_cb(unit_name, unit_fn, ('x', 'y', 123, None))
+        loop.call_soon_threadsafe(call_result_queue.put_nowait, result)
 
     def mock_create_evaluator(*args):
         _, _, _, call_cb = args
-        call_cb_queue.put_nowait(call_cb)
-        return MockEvaluator(*args)
+        return MockEvaluator(
+            *args,
+            eval_code_cb=functools.partial(ext_on_init_code, call_cb))
 
     with monkeypatch.context() as ctx:
         ctx.setattr(hat.controller.evaluators, 'create_evaluator',
@@ -242,27 +257,82 @@ async def test_call_cb(monkeypatch, with_trigger):
             environment_conf=env_conf,
             proxies=[unit_proxy])
 
-        call_cb = await call_cb_queue.get()
-
-        if with_trigger:
-            trigger = common.Trigger(type='trigger_xyz',
-                                     name='xyz',
-                                     data={'test_trigger_data': 123})
-            await env.process_trigger(trigger)
-            await asyncio.sleep(0.01)
-
-        async with aio.Executor() as executor:
-            call_cb_result = await executor.spawn(
-                call_cb, unit_name, unit_fn, ('x', 'y', 123, None))
-        assert call_cb_result == unit_call_result
-
         function, args, unit_trigger = await unit_call_args_queue.get()
         assert function == unit_fn
         assert args == ('x', 'y', 123, None)
-        if with_trigger:
-            assert unit_trigger == trigger
-        else:
-            assert unit_trigger is None
+        assert unit_trigger is None
+
+        call_cb_result = await call_result_queue.get()
+        assert call_cb_result == unit_call_result
+
+        await env.async_close()
+
+
+async def test_unit_call_cb_action(monkeypatch):
+    unit_call_args_queue = aio.Queue()
+    unit_call_result = {'unit': 'result',
+                        'abc': 123}
+
+    def on_unit_call(function, args, trigger):
+        unit_call_args_queue.put_nowait((function, args, trigger))
+        return unit_call_result
+
+    unit = MockUnit(call_cb=on_unit_call)
+    unit_name = 'u1'
+    unit_fn = 'f1.x.y'
+    unit_proxy = hat.controller.environment.UnitProxy(
+        unit=unit,
+        info=common.UnitInfo(
+            name=unit_name,
+            functions={unit_fn},
+            create=MockUnit,
+            json_schema_id=None,
+            json_schema_repo=None))
+
+    env_conf = {
+        'name': 'env1',
+        'interpreter': 'LUA',
+        'init_code': "",
+        'actions': [
+            {'name': 'a1',
+             'triggers': [{'type': 'test',
+                           'name': 'a1'}],
+             'code': 'a1 code'}]}
+
+    loop = asyncio.get_running_loop()
+    call_result_queue = aio.Queue()
+
+    def ext_on_eval_action(call_cb, action):
+        result = call_cb(unit_name, unit_fn, (['a'], 123.4, {'1': 1, '2': 2}))
+        loop.call_soon_threadsafe(call_result_queue.put_nowait, result)
+
+    def mock_create_evaluator(*args):
+        _, _, _, call_cb = args
+        return MockEvaluator(
+            *args,
+            eval_action_cb=functools.partial(ext_on_eval_action, call_cb))
+
+    with monkeypatch.context() as ctx:
+        ctx.setattr(hat.controller.evaluators, 'create_evaluator',
+                    mock_create_evaluator)
+
+        env = hat.controller.environment.Environment(
+            environment_conf=env_conf,
+            proxies=[unit_proxy])
+
+        trigger = common.Trigger(type='test',
+                                 name='a1',
+                                 data={'test_trigger_data': 123})
+        await env.process_trigger(trigger)
+        await asyncio.sleep(0.01)
+
+        function, args, unit_trigger = await unit_call_args_queue.get()
+        assert function == unit_fn
+        assert args == (['a'], 123.4, {'1': 1, '2': 2})
+        assert unit_trigger == trigger
+
+        call_cb_result = await call_result_queue.get()
+        assert call_cb_result == unit_call_result
 
         await env.async_close()
 
@@ -283,9 +353,10 @@ async def test_action_exception(monkeypatch, caplog):
              'code': 'action_wo_exc code...'}]}
 
     eval_action_queue = aio.Queue()
+    loop = asyncio.get_running_loop()
 
-    def on_eval_action(action):
-        eval_action_queue.put_nowait(action)
+    def ext_on_eval_action(action):
+        loop.call_soon_threadsafe(eval_action_queue.put_nowait, action)
         if action == 'action_w_exc':
             raise Exception("test action exception")
 
@@ -293,7 +364,7 @@ async def test_action_exception(monkeypatch, caplog):
         ctx.setattr(hat.controller.evaluators, 'create_evaluator',
                     functools.partial(
                         MockEvaluator,
-                        eval_action_cb=on_eval_action))
+                        eval_action_cb=ext_on_eval_action))
 
         env = hat.controller.environment.Environment(
             environment_conf=env_conf,
@@ -306,6 +377,8 @@ async def test_action_exception(monkeypatch, caplog):
         await env.process_trigger(trigger_action_w_exc)
         action = await eval_action_queue.get()
         assert action == 'action_w_exc'
+
+        await asyncio.sleep(0.01)
         assert len(caplog.records) == 1
         assert env.is_open
 
@@ -313,6 +386,8 @@ async def test_action_exception(monkeypatch, caplog):
         await env.process_trigger(trigger_action_w_exc)
         action = await eval_action_queue.get()
         assert action == 'action_w_exc'
+
+        await asyncio.sleep(0.01)
         assert len(caplog.records) == 2
         assert env.is_open
 
@@ -323,6 +398,8 @@ async def test_action_exception(monkeypatch, caplog):
         await env.process_trigger(trigger_action_wo_exc)
         action = await eval_action_queue.get()
         assert action == 'action_wo_exc'
+        
+        await asyncio.sleep(0.01)
         assert len(caplog.records) == 2
         assert env.is_open
 
@@ -391,13 +468,17 @@ async def test_trigger_subscription(trigger_type, trigger_name,
                            'name': 'x/a'}],
              'code': "some random code of a7"}]}
 
+    loop = asyncio.get_running_loop()
     action_queue = aio.Queue()
+
+    def ext_on_eval_action(action):
+        loop.call_soon_threadsafe(action_queue.put_nowait, action)
 
     with monkeypatch.context() as ctx:
         ctx.setattr(hat.controller.evaluators, 'create_evaluator',
                     functools.partial(
                         MockEvaluator,
-                        eval_action_cb=action_queue.put_nowait))
+                        eval_action_cb=ext_on_eval_action))
 
         env = hat.controller.environment.Environment(
             environment_conf=env_conf,
