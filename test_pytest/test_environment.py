@@ -37,7 +37,7 @@ class MockEvaluator(hat.controller.evaluators.Evaluator):
 
 class MockUnit(common.Unit):
 
-    def __init__(self, call_cb=None):
+    def __init__(self, conf, raise_trigger_cb=None, call_cb=None):
         self._async_group = aio.Group()
         self._call_cb = call_cb
 
@@ -97,7 +97,7 @@ async def test_create_evaluator(monkeypatch, interpreter_type):
                            'name': 'a2'}],
              'code': a2_code}]}
 
-    unit = MockUnit()
+    unit = MockUnit(None)
     unit_info = common.UnitInfo(
             name='u1',
             functions={'f1'},
@@ -218,7 +218,8 @@ async def test_unit_call_cb_init(monkeypatch):
         unit_call_args_queue.put_nowait((function, args, trigger))
         return unit_call_result
 
-    unit = MockUnit(call_cb=on_unit_call)
+    create_unit = functools.partial(MockUnit, call_cb=on_unit_call)
+    unit = create_unit(None)
     unit_name = 'u1'
     unit_fn = 'f1.x.y'
     unit_proxy = hat.controller.environment.UnitProxy(
@@ -226,7 +227,7 @@ async def test_unit_call_cb_init(monkeypatch):
         info=common.UnitInfo(
             name=unit_name,
             functions={unit_fn},
-            create=MockUnit,
+            create=create_unit,
             json_schema_id=None,
             json_schema_repo=None))
 
@@ -277,7 +278,8 @@ async def test_unit_call_cb_action(monkeypatch):
         unit_call_args_queue.put_nowait((function, args, trigger))
         return unit_call_result
 
-    unit = MockUnit(call_cb=on_unit_call)
+    create_unit = functools.partial(MockUnit, call_cb=on_unit_call)
+    unit = create_unit(None)
     unit_name = 'u1'
     unit_fn = 'f1.x.y'
     unit_proxy = hat.controller.environment.UnitProxy(
@@ -285,7 +287,7 @@ async def test_unit_call_cb_action(monkeypatch):
         info=common.UnitInfo(
             name=unit_name,
             functions={unit_fn},
-            create=MockUnit,
+            create=create_unit,
             json_schema_id=None,
             json_schema_repo=None))
 
@@ -398,7 +400,7 @@ async def test_action_exception(monkeypatch, caplog):
         await env.process_trigger(trigger_action_wo_exc)
         action = await eval_action_queue.get()
         assert action == 'action_wo_exc'
-        
+
         await asyncio.sleep(0.01)
         assert len(caplog.records) == 2
         assert env.is_open
