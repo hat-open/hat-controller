@@ -13,7 +13,7 @@ class PyEvaluator(common.Evaluator):
                  infos: Iterable[common.UnitInfo],
                  call_cb: common.CallCb):
         self._interpreter = interpreter
-        self._actions = {}
+        self._actions = action_codes
 
         interpreter.globals['units'] = _create_units(infos, call_cb)
 
