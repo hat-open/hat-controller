@@ -31,14 +31,20 @@ class Environment(aio.Resource):
         self._trigger_queue = aio.Queue(trigger_queue_size)
         self._proxies = {proxy.info.name: proxy for proxy in proxies}
         self._last_trigger = None
-        self._action_confs = {action_conf['name']: action_conf
-                              for action_conf in environment_conf['actions']}
+        self._action_triggers = {
+            action_conf['name']: [(tuple(trigger_conf['type'].split('/')),
+                                   tuple(trigger_conf['name'].split('/')))
+                                  for trigger_conf in action_conf['triggers']]
+            for action_conf in environment_conf['actions']}
 
         interpreter_type = hat.controller.interpreters.InterpreterType(
             environment_conf['interpreter'])
         init_code = environment_conf['init_code']
+        action_codes = {action_conf['name']: action_conf['code']
+                        for action_conf in environment_conf['actions']}
 
-        self.async_group.spawn(self._run_loop, interpreter_type, init_code)
+        self.async_group.spawn(self._run_loop, interpreter_type, init_code,
+                               action_codes)
 
     @property
     def async_group(self) -> aio.Group:
@@ -47,10 +53,8 @@ class Environment(aio.Resource):
     async def process_trigger(self, trigger: common.Trigger):
         await self._trigger_queue.put(trigger)
 
-    async def _run_loop(self, interpreter_type, init_code):
+    async def _run_loop(self, interpreter_type, init_code, action_codes):
         try:
-            action_codes = {action_conf['name']: action_conf['code']
-                            for action_conf in self._action_confs.values()}
             infos = (proxy.info for proxy in self._proxies.values())
 
             evaluator = await self._executor.spawn(
@@ -62,8 +66,12 @@ class Environment(aio.Resource):
 
             while True:
                 self._last_trigger = await self._trigger_queue.get()
+                trigger_type = tuple(self._last_trigger.type.split('/'))
+                trigger_name = tuple(self._last_trigger.name.split('/'))
 
-                for action_name in self._get_matching_action_names():
+                action_names = self._get_matching_action_names(trigger_type,
+                                                               trigger_name)
+                for action_name in action_names:
                     await self._executor.spawn(self._ext_eval_action,
                                                evaluator, action_name)
 
@@ -101,25 +109,29 @@ class Environment(aio.Resource):
             mlog.error("environment %s action %s error: %s",
                        self._name, action_name, e, exc_info=e)
 
-    def _get_matching_action_names(self):
-        for action_name, action_conf in self._action_confs.items():
-            for trigger_conf in action_conf['triggers']:
-                if _match_trigger(self._last_trigger, trigger_conf['type'],
-                                  trigger_conf['name']):
-                    yield action_name
-                    break
+    def _get_matching_action_names(self, trigger_type, trigger_name):
+        for action_name, action_triggers in self._action_triggers.items():
+            for type_query, name_query in action_triggers:
+                if not _match_query(trigger_type, type_query):
+                    continue
 
+                if not _match_query(trigger_name, name_query):
+                    continue
 
-def _match_trigger(trigger, type_query, name_query):
-    return (_match_query(trigger.type, type_query) and
-            _match_query(trigger.name, name_query))
+                yield action_name
+                break
 
 
 def _match_query(value, query):
-    if query == '*':
-        return True
+    if query and query[-1] == '*':
+        query = query[:-1]
+        value = value[:len(query)]
 
-    if query.endswith('/*'):
-        return value.startswith(query[:-1]) or value == query[:-2]
+    if len(value) != len(query):
+        return False
 
-    return value == query
+    for v, q in zip(value, query):
+        if q != '?' and v != q:
+            return False
+
+    return True

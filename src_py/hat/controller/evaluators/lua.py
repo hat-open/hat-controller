@@ -61,7 +61,7 @@ def _create_api(infos):
             parent[segments[-1]] = (f"(function(...) return f("
                                     f"'{info.name}', "
                                     f"'{function}', "
-                                    f"..."
+                                    f"{{...}}"
                                     f") end)")
 
         api_dict[info.name] = unit_api_dict

@@ -48,6 +48,8 @@ Controller
 ..     * in case of trigger subscriptions, ``*`` can replace zero or more
 ..       type/name segments
 ..         * can occur only at the end of type/name
+..     * in case of trigger subscriptions, ``?`` can replace exactly one
+..       type/name segment
 
 .. * todo
 ..     * should we allow multiple instances of same unit?
