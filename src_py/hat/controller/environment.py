@@ -27,7 +27,7 @@ class Environment(aio.Resource):
                  trigger_queue_size: int = 4096):
         self._name = environment_conf['name']
         self._loop = asyncio.get_running_loop()
-        self._executor = aio.Executor(log_exceptions=False)
+        self._executor = aio.Executor(1, log_exceptions=False)
         self._trigger_queue = aio.Queue(trigger_queue_size)
         self._proxies = {proxy.info.name: proxy for proxy in proxies}
         self._last_trigger = None
