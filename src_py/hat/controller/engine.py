@@ -61,7 +61,7 @@ class Engine(aio.Resource):
                 trigger = await self._trigger_queue.get()
 
                 for env in self._envs:
-                    await env.process_trigger(trigger)
+                    await env.enqueue_trigger(trigger)
 
         except Exception as e:
             mlog.error('trigger loop error: %s', e, exc_info=e)

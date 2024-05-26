@@ -20,8 +20,8 @@ class TriggersUnit(common.Unit):
             if not trigger:
                 return
 
-            return {'type': trigger.type,
-                    'name': trigger.name,
+            return {'type': '/'.join(trigger.type),
+                    'name': '/'.join(trigger.name),
                     'data': trigger.data}
 
         if function == 'raise':
@@ -35,8 +35,8 @@ class TriggersUnit(common.Unit):
             if not isinstance(delay, (int, float)):
                 raise Exception('invalid delay type')
 
-            t = common.Trigger(type='triggers/custom',
-                               name=name,
+            t = common.Trigger(type=('triggers', 'custom'),
+                               name=tuple(name.split('/')),
                                data=data)
 
             if delay > 0:

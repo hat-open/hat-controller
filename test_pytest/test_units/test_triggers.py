@@ -48,8 +48,8 @@ async def test_raise(name, data):
 
     assert not trigger_queue.empty()
     trigger = trigger_queue.get_nowait()
-    assert trigger.type == 'triggers/custom'
-    assert trigger.name == name
+    assert trigger.type == ('triggers', 'custom')
+    assert trigger.name == tuple(name.split('/'))
     if data is None:
         assert trigger.data is data
     else:
@@ -80,8 +80,8 @@ async def test_raise_with_delay():
     assert not trigger_queue.empty()
 
     trigger = trigger_queue.get_nowait()
-    assert trigger.type == 'triggers/custom'
-    assert trigger.name == name
+    assert trigger.type == ('triggers', 'custom')
+    assert trigger.name == tuple(name.split('/'))
     assert trigger.data == data
 
     assert trigger_queue.empty()
@@ -91,11 +91,11 @@ async def test_raise_with_delay():
 
 @pytest.mark.parametrize('trigger', [
     None,
-    common.Trigger(type='test/type',
-                   name='abc',
+    common.Trigger(type=('test', 'type'),
+                   name=('abc', ),
                    data={'123': 12345}),
-    common.Trigger(type='test/type/none',
-                   name='none',
+    common.Trigger(type=('test', 'type', 'none'),
+                   name=('none', ),
                    data=None)])
 async def test_get_current(trigger):
     trigger_queue = aio.Queue()
@@ -107,9 +107,11 @@ async def test_get_current(trigger):
     assert trigger_queue.empty()
 
     if trigger is None:
-        assert result_trigger is trigger
+        assert result_trigger is None
     else:
-        assert result_trigger == trigger._asdict()
+        assert result_trigger == {'type': '/'.join(trigger.type),
+                                  'name': '/'.join(trigger.name),
+                                  'data': trigger.data}
 
     assert trigger_queue.empty()
 

@@ -50,7 +50,7 @@ class Environment(aio.Resource):
     def async_group(self) -> aio.Group:
         return self._executor.async_group
 
-    async def process_trigger(self, trigger: common.Trigger):
+    async def enqueue_trigger(self, trigger: common.Trigger):
         await self._trigger_queue.put(trigger)
 
     async def _run_loop(self, interpreter_type, init_code, action_codes):
@@ -66,11 +66,9 @@ class Environment(aio.Resource):
 
             while True:
                 self._last_trigger = await self._trigger_queue.get()
-                trigger_type = tuple(self._last_trigger.type.split('/'))
-                trigger_name = tuple(self._last_trigger.name.split('/'))
 
-                action_names = self._get_matching_action_names(trigger_type,
-                                                               trigger_name)
+                action_names = self._get_matching_action_names(
+                    self._last_trigger)
                 for action_name in action_names:
                     await self._executor.spawn(self._ext_eval_action,
                                                evaluator, action_name)
@@ -109,13 +107,13 @@ class Environment(aio.Resource):
             mlog.error("environment %s action %s error: %s",
                        self._name, action_name, e, exc_info=e)
 
-    def _get_matching_action_names(self, trigger_type, trigger_name):
+    def _get_matching_action_names(self, trigger):
         for action_name, action_triggers in self._action_triggers.items():
             for type_query, name_query in action_triggers:
-                if not _match_query(trigger_type, type_query):
+                if not _match_query(trigger.type, type_query):
                     continue
 
-                if not _match_query(trigger_name, name_query):
+                if not _match_query(trigger.name, name_query):
                     continue
 
                 yield action_name

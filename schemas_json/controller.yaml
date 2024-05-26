@@ -79,5 +79,9 @@ $defs:
         properties:
             type:
                 type: string
+                description: |
+                    type segments are delimited by "/"
             name:
                 type: string
+                decription: |
+                    name segments are delimited by "/"

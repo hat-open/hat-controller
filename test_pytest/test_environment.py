@@ -197,11 +197,11 @@ async def test_action(monkeypatch):
         await asyncio.sleep(0.01)
         assert action_queue.empty()
 
-        process_trigger_res = await env.process_trigger(common.Trigger(
-            type='test',
-            name='a1',
+        enqueue_trigger_res = await env.enqueue_trigger(common.Trigger(
+            type=('test', ),
+            name=('a1', ),
             data=None))
-        assert process_trigger_res is None
+        assert enqueue_trigger_res is None
 
         action = await action_queue.get()
         assert action == 'a1'
@@ -322,10 +322,10 @@ async def test_unit_call_cb_action(monkeypatch):
             environment_conf=env_conf,
             proxies=[unit_proxy])
 
-        trigger = common.Trigger(type='test',
-                                 name='a1',
+        trigger = common.Trigger(type=('test', ),
+                                 name=('a1', ),
                                  data={'test_trigger_data': 123})
-        await env.process_trigger(trigger)
+        await env.enqueue_trigger(trigger)
         await asyncio.sleep(0.01)
 
         function, args, unit_trigger = await unit_call_args_queue.get()
@@ -373,10 +373,10 @@ async def test_action_exception(monkeypatch, caplog):
             proxies=[])
 
         trigger_action_w_exc = common.Trigger(
-            type='test',
-            name='action_w_exc',
+            type=('test', ),
+            name=('action_w_exc', ),
             data=None)
-        await env.process_trigger(trigger_action_w_exc)
+        await env.enqueue_trigger(trigger_action_w_exc)
         action = await eval_action_queue.get()
         assert action == 'action_w_exc'
 
@@ -385,7 +385,7 @@ async def test_action_exception(monkeypatch, caplog):
         assert env.is_open
 
         # action is run again after exception
-        await env.process_trigger(trigger_action_w_exc)
+        await env.enqueue_trigger(trigger_action_w_exc)
         action = await eval_action_queue.get()
         assert action == 'action_w_exc'
 
@@ -394,10 +394,10 @@ async def test_action_exception(monkeypatch, caplog):
         assert env.is_open
 
         # another action is called after previous action raised exception
-        trigger_action_wo_exc = common.Trigger(type='test',
-                                               name='action_wo_exc',
+        trigger_action_wo_exc = common.Trigger(type=('test', ),
+                                               name=('action_wo_exc', ),
                                                data=None)
-        await env.process_trigger(trigger_action_wo_exc)
+        await env.enqueue_trigger(trigger_action_wo_exc)
         action = await eval_action_queue.get()
         assert action == 'action_wo_exc'
 
@@ -487,10 +487,10 @@ async def test_trigger_subscription(trigger_type, trigger_name,
             proxies=[])
         await asyncio.sleep(0.01)
 
-        trigger = common.Trigger(type=trigger_type,
-                                 name=trigger_name,
+        trigger = common.Trigger(type=tuple(trigger_type.split('/')),
+                                 name=tuple(trigger_name.split('/')),
                                  data={'test_data': 123})
-        await env.process_trigger(trigger)
+        await env.enqueue_trigger(trigger)
 
         triggered_actions_res = set()
         for _ in range(len(triggered_actions)):

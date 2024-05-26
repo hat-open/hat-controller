@@ -19,8 +19,8 @@ async def assert_trigger_raised(trigger_name, period, trigger_queue, ts=None):
 
     trigger = await asyncio.wait_for(trigger_queue.get(), 2 * dt_tol)
     ts_after_ms = time.time() * 1000
-    assert trigger.type == 'timers/timer'
-    assert trigger.name == trigger_name
+    assert trigger.type == ('timers', 'timer')
+    assert trigger.name == (trigger_name, )
 
     if ts:
         assert trigger.data == ts * 1000

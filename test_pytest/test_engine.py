@@ -88,7 +88,7 @@ def mock_environment(monkeypatch):
         def async_group(self):
             return self._async_group
 
-        async def process_trigger(self, trigger):
+        async def enqueue_trigger(self, trigger):
             self._trigger_queue.put_nowait(trigger)
 
         @property

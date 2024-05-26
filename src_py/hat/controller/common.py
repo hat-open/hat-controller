@@ -14,11 +14,11 @@ with importlib.resources.as_file(importlib.resources.files(__package__) /
         json.SchemaRepository.from_json(_path))
     """JSON schema repository"""
 
-TriggerType: typing.TypeAlias = str
-"""Trigger type (segments are delimited by '/')"""
+TriggerType: typing.TypeAlias = tuple[str, ...]
+"""Trigger type"""
 
-TriggerName: typing.TypeAlias = str
-"""Trigger name (segments are delimited by '/')"""
+TriggerName: typing.TypeAlias = tuple[str, ...]
+"""Trigger name"""
 
 FunctionName: typing.TypeAlias = str
 """Function name (segments are delimited by '.')"""
