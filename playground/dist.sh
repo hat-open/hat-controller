@@ -19,9 +19,9 @@ for TARGET_PLATFORM in $TARGET_PLATFORMS; do
     cp $ROOT_PATH/build/py/*.whl $DIST_PATH
 done
 
-IMAGES="linux/amd64/build-hat-controller:debian11-cpy3.11
-        linux/arm64/v8/build-hat-controller:debian11-cpy3.11
-        linux/arm/v7/build-hat-controller:debian11-cpy3.11"
+IMAGES="linux/amd64/build-hat-controller:debian11-cpy3.12
+        linux/arm64/v8/build-hat-controller:debian11-cpy3.12
+        linux/arm/v7/build-hat-controller:debian11-cpy3.12"
 
 for IMAGE in $IMAGES; do
     $PYTHON -m doit clean_all
