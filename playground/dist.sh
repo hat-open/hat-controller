@@ -25,10 +25,11 @@ IMAGES="linux/amd64/build-hat-controller:debian11-cpy3.11
 
 for IMAGE in $IMAGES; do
     $PYTHON -m doit clean_all
+    DOCKERFILE=$PLAYGROUND_PATH/dockerfiles/$(echo $IMAGE | cut -d ':' -f 2)
     PLATFORM=$(dirname $IMAGE)
     IMAGE_ID=$(podman images -q $IMAGE)
     podman build --platform $PLATFORM \
-                 -f $PLAYGROUND_PATH/dockerfiles/$IMAGE \
+                 -f $DOCKERFILE \
                  -t $IMAGE \
                  .
     if [ -n "$IMAGE_ID" -a "$IMAGE_ID" != "$(podman images -q $IMAGE)" ]; then
