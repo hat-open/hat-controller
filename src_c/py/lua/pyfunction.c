@@ -29,7 +29,7 @@ static int unsafe_pyfunction_call(lua_State *L) {
             return lua_raise_py_error(L, "error converting argument");
 
         Py_INCREF(arg);
-        if (PyTuple_SetItem(args, i, args) < 0)
+        if (PyTuple_SetItem(args, i, arg) < 0)
             return lua_raise_py_error(L, "error setting argument");
 
         lua_pop(L, 1);
