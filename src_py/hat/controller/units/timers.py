@@ -77,7 +77,7 @@ class TimersUnit(common.Unit):
                     continue
 
                 trigger = common.Trigger(type=('timers', 'timer'),
-                                         name=(name, ),
+                                         name=tuple(name.split('/')),
                                          data=t_next_utc.timestamp() * 1000)
                 await self._raise_trigger(trigger)
 
@@ -103,7 +103,7 @@ class TimersUnit(common.Unit):
                 await asyncio.sleep(duration)
 
                 trigger = common.Trigger(type=('timers', 'timer'),
-                                         name=(name, ),
+                                         name=tuple(name.split('/')),
                                          data=time.time() * 1000)
                 await self._raise_trigger(trigger)
 

@@ -22,6 +22,8 @@ properties:
             properties:
                 name:
                     type: string
+                    description: |
+                        name segments are delimited by "/"
                 time:
                     oneOf:
                       - type: number
