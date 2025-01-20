@@ -17,13 +17,14 @@ def test_info():
         'warning',
         'error'}
     assert isinstance(info.create, aio.AsyncCallable)
-    assert isinstance(info.json_schema_repo, json.SchemaRepository)
+    assert isinstance(info.json_schema_repo, dict)
     assert isinstance(info.json_schema_id, str)
 
 
 def test_conf():
     conf = {'logger': 'xyz'}
-    info.json_schema_repo.validate(info.json_schema_id, conf)
+    validator = json.DefaultSchemaValidator(info.json_schema_repo)
+    validator.validate(info.json_schema_id, conf)
 
 
 async def test_create():

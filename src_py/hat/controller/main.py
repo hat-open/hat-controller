@@ -42,12 +42,14 @@ def sync_main(conf: json.Data):
     """Sync main entry point"""
     aio.init_asyncio()
 
-    common.json_schema_repo.validate('hat-controller://controller.yaml', conf)
+    validator = json.DefaultSchemaValidator(common.json_schema_repo)
+    validator.validate('hat-controller://controller.yaml', conf)
 
     for unit_conf in conf['units']:
         info = common.import_unit_info(unit_conf['module'])
         if info.json_schema_repo and info.json_schema_id:
-            info.json_schema_repo.validate(info.json_schema_id, unit_conf)
+            validator = json.DefaultSchemaValidator(info.json_schema_repo)
+            validator.validate(info.json_schema_id, unit_conf)
 
     log_conf = conf.get('log')
     if log_conf:
