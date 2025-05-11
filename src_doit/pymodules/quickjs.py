@@ -14,7 +14,7 @@ __all__ = ['task_pymodules_quickjs',
 
 quickjs_path = (common.src_py_dir / 'hat/controller/interpreters/_quickjs'
                 ).with_suffix(common.py_ext_suffix)
-quickjs_files = ['cutils.c', 'libbf.c', 'libregexp.c', 'libunicode.c',
+quickjs_files = ['cutils.c', 'dtoa.c', 'libregexp.c', 'libunicode.c',
                  'quickjs.c', 'unicode_gen.c']
 quickjs_src_paths = [*(common.src_c_dir / 'py/quickjs').rglob('*.c'),
                      *((common.peru_dir / 'quickjs') / i
@@ -27,7 +27,7 @@ quickjs_c_flags = [
     f"-I{common.peru_dir / 'quickjs'}",
     '-fPIC',
     '-D_GNU_SOURCE',
-    '-DCONFIG_VERSION="2024-01-13"',
+    '-DCONFIG_VERSION="2025-04-26"',
     '-O2',
     # '-ggdb'
     ]

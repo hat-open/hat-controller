@@ -17,7 +17,7 @@ curl module lua:
 
 git module quickjs:
     url: https://github.com/bozokopic/quickjs.git
-    rev: 95b81bf454844a07ec73279ad521d49aafb7fcd8
+    rev: f459c9fa9a097a1965cd1e262b1daa69ea9f413f
 
 # cp module hat-util:
 #     path: ../hat-util
