@@ -44,7 +44,6 @@ set -e
 python3 -m venv venv
 . venv/bin/activate
 pip install --upgrade pip hat-json
-./playground/requirements.sh > requirements.pip.txt
 pip install --upgrade --group dev
 doit clean_all
 doit
